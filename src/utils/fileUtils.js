@@ -66,8 +66,12 @@ export async function parseExcelFile(file) {
 }
 
 export function exportAmazonFormat(assignments, importData) {
+  let nullnum = [];
+  let box_merge_num = 0;
   let max = assignments.mainJson.length;
+
   const wb = XLSX.utils.book_new();
+  const ws_data = [];
 
   // 1. Add Instruction Sheet (if available from original import)
   if (importData?.originalSheetData?.instruction?.data) {
@@ -82,9 +86,6 @@ export function exportAmazonFormat(assignments, importData) {
   }
 
   // 2. Create and Add BoxSummary Sheet (your main output)
-  const ws_data = [];
-  let nullnum = [];
-  let box_merge_num = 0;
 
   for (let i = 0; i < max; i++) {
     if (assignments.mainJson[i][0] === "") {
@@ -121,8 +122,8 @@ export function exportAmazonFormat(assignments, importData) {
     } else if (box_merge_num === i) {
       for (let j = 1; j <= 5; j++) {
         ws["!merges"].push({
-          s: { r: i+j, c: 0 }, // Start at column A
-          e: { r: i+j, c: 11 }, // End at column C
+          s: { r: i + j, c: 0 }, // Start at column A
+          e: { r: i + j, c: 11 }, // End at column C
         });
       }
     }
@@ -146,7 +147,12 @@ export function exportAmazonFormat(assignments, importData) {
 
 export function exportBoxSummary(assignments) {
   const wb = XLSX.utils.book_new();
+  let max = assignments.mainJson.length;
+  let nullnum = [];
+  for (let i = 0; i < max; i++) {
+    if (assignments.mainJson[i][0] === "") {
+      nullnum.push(i);
+    }
+  }
 
 }
-
-

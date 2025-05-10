@@ -16,7 +16,10 @@ const Header = () => {
               <Link className="nav-link" to="/">Upload</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/manage-boxes">Boxes</Link>
+              <Link className="nav-link" to="/products">Products</Link>
+            </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/boxsummary">Boxes</Link>
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/export">Export</Link>

@@ -13,7 +13,7 @@ const FileUpload = () => {
     try {
       const data = await parseExcelFile(file);
       await saveImportData(data);
-      navigate("/manage-boxes");
+      navigate("/products");
     } catch (e) {
       setError(
         "Failed to parse file. Please upload a valid Amazon box content file."

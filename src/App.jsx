@@ -7,6 +7,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import BoxManagement from './pages/BoxManagement';
 import ExportPage from './pages/ExportPage';
+import BoxSummary from './pages/BoxSummary';
 
 const App = () => {
   return (
@@ -17,8 +18,9 @@ const App = () => {
         <main className="flex-grow-1 container my-4">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/manage-boxes" element={<BoxManagement />} />
+            <Route path="/products" element={<BoxManagement />} />
             <Route path="/export" element={<ExportPage />} />
+            <Route path="/boxsummary" element={<BoxSummary />} />
           </Routes>
         </main>
 
