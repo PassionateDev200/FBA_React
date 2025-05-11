@@ -40,19 +40,19 @@ export async function parseExcelFile(file) {
         });
         let mainJson = [];
         let length = 0;
-        for(let i in json[4]) {
-          if(json[4][i]===""&& i > 12) {
+        for (let i in json[4]) {
+          if (json[4][i] === "" && i > 12) {
             length = i;
             break;
           }
         }
-        json.map((item) =>{
+        json.map((item) => {
           let array_item = [];
-          for(let i = 0;i<length;i++) {
+          for (let i = 0; i < length; i++) {
             array_item.push(item[i]);
           }
           mainJson.push(array_item);
-        })
+        });
         const metadataData = metadataSheet
           ? XLSX.utils.sheet_to_json(metadataSheet, { header: 1, defval: "" })
           : null;
@@ -168,5 +168,4 @@ export function exportBoxSummary(importData) {
       nullnum.push(i);
     }
   }
-
 }

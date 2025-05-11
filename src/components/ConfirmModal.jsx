@@ -1,6 +1,6 @@
 // ConfirmModal.jsx
-import React from 'react';
-import { Modal, Button } from 'react-bootstrap';
+import React from "react";
+import { Modal, Button } from "react-bootstrap";
 
 const ConfirmModal = ({ show, title, message, onConfirm, onCancel }) => {
   return (

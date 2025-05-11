@@ -11,12 +11,13 @@ const BoxSummary = () => {
   const [importData, setImportData] = useState({});
   const [selectId, setSelectId] = useState(0);
   const [boxDetail, setBoxDetail] = useState([]);
-
+  const [avalible_fnsku, setAvalible_fnsku] = useState([]);
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     loadBoxes();
@@ -35,12 +36,20 @@ const BoxSummary = () => {
       let boxNameId = 0;
 
       setImportData(data);
-
+      let fnsku = [];
       for (let i = 0; i < data.mainJson.length; i++) {
         if (data.mainJson[i][0] === "Name of box") {
           boxNameId = i;
+          break;
+        }
+        if (i > 4) {
+          fnsku.push([
+            i,
+            parseInt(data.mainJson[i][9]) - parseInt(data.mainJson[i][10]),
+          ]);
         }
       }
+      setAvalible_fnsku(fnsku);
 
       name = data.mainJson[boxNameId];
       weight = data.mainJson[boxNameId + 1];
@@ -74,6 +83,10 @@ const BoxSummary = () => {
 
   const onListClicked = useCallback((index) => {
     setSelectId(index);
+    calculateBox(index);
+  }, []);
+
+  const calculateBox = (index) => {
     let detail = [];
     if (index > 10) {
       getImportData().then((data) =>
@@ -85,9 +98,8 @@ const BoxSummary = () => {
         )
       );
       setBoxDetail(detail);
-      console.log("-------- detail -----------------", detail);
     }
-  }, []);
+  };
 
   // Handle opening the add box modal
   const handleAddBox = () => {
@@ -109,7 +121,6 @@ const BoxSummary = () => {
   const addBoxToData = (boxData) => {
     getImportData().then((data) => {
       console.log("addboxdata", data, boxData);
-      
 
       // if (!data) return;
 
@@ -121,10 +132,10 @@ const BoxSummary = () => {
         }
       }
 
-      let current_length = data.mainJson[4].length-11;
+      let current_length = data.mainJson[4].length - 11;
       data.mainJson[4].push(`Box ${current_length} quantity`);
       data.mainJson[boxNameId].push(`P1 - B${current_length}`);
-      
+
       data.mainJson[boxNameId + 1].push(boxData.weight);
       data.mainJson[boxNameId + 2].push(boxData.width);
       data.mainJson[boxNameId + 3].push(boxData.length);
@@ -192,9 +203,31 @@ const BoxSummary = () => {
     });
   };
 
-  const addItem = () => {
-    console.log("asdfsdf");
-  }
+  const addItem = (fnsku, quantity) => {
+    console.log(typeof quantity); // entered books
+    console.log(importData.mainJson[fnsku][10]); // boxed quantity
+    let status;
+    if (avalible_fnsku[fnsku - 5][1] >= quantity) {
+      avalible_fnsku[fnsku - 5][1] -= quantity;
+      importData.mainJson[fnsku][10] =
+        parseInt(importData.mainJson[fnsku][10]) + quantity + ""; //mounted books
+      if (importData.mainJson[fnsku][selectId] === "") {
+        importData.mainJson[fnsku][selectId] = quantity + "";
+      } else {
+        importData.mainJson[fnsku][selectId] =
+          parseInt(importData.mainJson[fnsku][selectId]) + quantity + "";
+      }
+      saveImportData(importData);
+      calculateBox(selectId);
+      loadBoxes();
+      setError("");
+      status = true;
+    } else {
+      setError("Exceed the maximum quantity");
+      status = false;
+    }
+    return status;
+  };
 
   return (
     <div className="container mt-4">
@@ -212,7 +245,14 @@ const BoxSummary = () => {
           <BoxList boxes={boxes} onSelect={onListClicked} />
         </div>
         <div className="col-md-8">
-          <BoxContent addItem = {addItem} box={boxDetail} boxName={boxes[selectId]} />
+          <BoxContent
+            addItem={addItem}
+            box={boxDetail}
+            boxName={boxes[selectId]}
+            availablefnskus={avalible_fnsku}
+            error={error}
+            selectId={selectId}
+          />
         </div>
       </div>
 
@@ -236,6 +276,7 @@ const BoxSummary = () => {
         message={confirmMessage}
         onConfirm={confirmAction}
         onCancel={() => setShowConfirmModal(false)}
+        error={error}
       />
     </div>
   );
