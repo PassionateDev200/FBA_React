@@ -25,7 +25,6 @@ const BoxSummary = () => {
 
   // Add this function to handle opening the edit modal
   const handleEditBox = (index, boxData) => {
-    console.log("handleEditBox", index, boxData);
     setCurrentEditBox({ index, data: boxData });
     setShowEditModal(true);
   };
@@ -170,7 +169,6 @@ const BoxSummary = () => {
   // Add the box data to storage
   const addBoxToData = (boxData) => {
     getImportData().then((data) => {
-      console.log("addboxdata", data, boxData);
 
       // if (!data) return;
 
@@ -308,8 +306,8 @@ const BoxSummary = () => {
   };
 
   const addItem = (fnsku, quantity) => {
-    console.log(typeof quantity); // entered books
-    console.log(importData.mainJson[fnsku][10]); // boxed quantity
+    // entered books : (typeof quantity)
+    // boxed quantity : (importData.mainJson[fnsku][10])
     let status;
     if (avalible_fnsku[fnsku - 5][1] >= quantity) {
       avalible_fnsku[fnsku - 5][1] -= quantity;

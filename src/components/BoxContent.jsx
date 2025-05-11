@@ -12,7 +12,6 @@ const BoxContent = ({
   removeFNSKU,
 }) => {
   const [showModal, setShowModal] = useState(false);
-  console.log(availablefnskus);
   // State for form data
   const [formData, setFormData] = useState({
     fnsku: "",
@@ -47,7 +46,6 @@ const BoxContent = ({
   const handleSubmit = () => {
     // Call the parent component's add item function
     let status = addItem(formData.fnsku, parseInt(formData.quantity));
-    console.log(status);
     if (status) {
       handleCloseModal();
     }
