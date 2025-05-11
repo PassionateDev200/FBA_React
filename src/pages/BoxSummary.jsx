@@ -203,6 +203,60 @@ const BoxSummary = () => {
     });
   };
 
+  const removeFNSKU = (fnsku, quantity) => {
+    // Show confirmation modal
+    setConfirmMessage(
+      `Are you sure you want to remove ${quantity} units of FNSKU ${fnsku} from this box?`
+    );
+    setConfirmAction(() => () => {
+      // This will be executed when user confirms
+      removeFNSKUFromBox(fnsku, quantity);
+      setShowConfirmModal(false);
+    });
+    setShowConfirmModal(true);
+  };
+
+  const removeFNSKUFromBox = (fnsku, quantity) => {
+    // Find the index of the FNSKU in the mainJson array
+    let fnskuRow = -1;
+    for (let i = 5; i < importData.mainJson.length; i++) {
+      if (importData.mainJson[i][4] === fnsku) {
+        fnskuRow = i;
+        break;
+      }
+    }
+
+    if (fnskuRow !== -1) {
+      // Get the current quantity
+      const currentQuantity =
+        parseInt(importData.mainJson[fnskuRow][selectId]) || 0;
+      const removeQuantity = parseInt(quantity) || 0;
+
+      // Remove the quantity from the box
+      importData.mainJson[fnskuRow][selectId] = "";
+
+      // Update the boxed quantity (column 10)
+      const boxedQuantity = parseInt(importData.mainJson[fnskuRow][10]) || 0;
+      importData.mainJson[fnskuRow][10] = boxedQuantity - removeQuantity + "";
+
+      // Increase the available quantity
+      for (let i = 0; i < avalible_fnsku.length; i++) {
+        if (avalible_fnsku[i][0] === fnskuRow) {
+          avalible_fnsku[i][1] += removeQuantity;
+          break;
+        }
+      }
+
+      // Save data to localStorage
+      saveImportData(importData).then(() => {
+        // Refresh the UI
+        calculateBox(selectId);
+        loadBoxes();
+        setError("");
+      });
+    }
+  };
+
   const addItem = (fnsku, quantity) => {
     console.log(typeof quantity); // entered books
     console.log(importData.mainJson[fnsku][10]); // boxed quantity
@@ -231,10 +285,9 @@ const BoxSummary = () => {
 
   return (
     <div className="container mt-4">
-      <h3 className="mb-3">Box Summary</h3>
+      <h1 className="mb-3">Box Summary</h1>
       <div className="row mb-4">
         <div className="col">
-          <h2>Box Summary</h2>
           <Button variant="primary" onClick={handleAddBox} className="mb-3">
             Add New Box
           </Button>
@@ -252,6 +305,7 @@ const BoxSummary = () => {
             availablefnskus={avalible_fnsku}
             error={error}
             selectId={selectId}
+            removeFNSKU={removeFNSKU}
           />
         </div>
       </div>

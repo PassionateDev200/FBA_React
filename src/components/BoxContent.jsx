@@ -9,6 +9,7 @@ const BoxContent = ({
   availablefnskus,
   error,
   selectId,
+  removeFNSKU,
 }) => {
   const [showModal, setShowModal] = useState(false);
   console.log(availablefnskus);
@@ -45,17 +46,18 @@ const BoxContent = ({
   // Handle form submission
   const handleSubmit = () => {
     // Call the parent component's add item function
-    let a = addItem(formData.fnsku, parseInt(formData.quantity));
-    console.log(a);
-    if (a) {
+    let status = addItem(formData.fnsku, parseInt(formData.quantity));
+    console.log(status);
+    if (status) {
       handleCloseModal();
     }
     // Close the modal
   };
+
   return (
     <div className="card mb-4 shadow-sm">
       <div className="card-header bg-primary text-white">
-        <h5 className="mb-0">Contents of Box {boxName}</h5>
+        <h5 className="mb-0">{boxName}</h5>
       </div>
       <div className="card-body">
         <div className="input-group mb-3">
@@ -82,9 +84,15 @@ const BoxContent = ({
                     <td>{detail.fnsku}</td>
                     <td>{detail.quantity}</td>
                     <td>
-                      <button className="btn btn-sm btn-danger" disabled>
-                        Delete
-                      </button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() =>
+                          removeFNSKU(detail.fnsku, detail.quantity)
+                        }
+                      >
+                        Remove
+                      </Button>
                     </td>
                   </tr>
                 )
