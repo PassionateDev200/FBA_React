@@ -5,6 +5,7 @@ import { getImportData, saveImportData } from "../utils/storage";
 import { Button, Modal } from "react-bootstrap";
 import ConfirmModal from "../components/ConfirmModal";
 import AddBoxForm from "../components/AddBoxForm";
+import EditBoxForm from "../components/EditBoxForm";
 
 const BoxSummary = () => {
   const [boxes, setBoxes] = useState([]);
@@ -18,6 +19,55 @@ const BoxSummary = () => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
   const [error, setError] = useState("");
+  // Add these state variables to your existing state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentEditBox, setCurrentEditBox] = useState({ index: 0, data: "" });
+
+  // Add this function to handle opening the edit modal
+  const handleEditBox = (index, boxData) => {
+    console.log("handleEditBox", index, boxData);
+    setCurrentEditBox({ index, data: boxData });
+    setShowEditModal(true);
+  };
+
+  // Add this function to handle the edit form submission
+  const handleEditBoxSubmit = (boxData) => {
+    setConfirmMessage(`Are you sure you want to update box "${boxData.name}"?`);
+    setConfirmAction(() => () => {
+      updateBoxInData(currentEditBox.index, boxData);
+      setShowConfirmModal(false);
+      setShowEditModal(false);
+    });
+    setShowConfirmModal(true);
+  };
+
+  // Add this function to update the box data in storage
+  const updateBoxInData = (boxIndex, boxData) => {
+    getImportData().then((data) => {
+      if (!data) return;
+
+      let boxNameId = 0;
+      for (let i = 0; i < data.mainJson.length; i++) {
+        if (data.mainJson[i][0] === "Name of box") {
+          boxNameId = i;
+          break;
+        }
+      }
+
+      // Update the box properties
+      // Note: We're not updating the name as it's disabled in the form
+      data.mainJson[boxNameId + 1][boxIndex] = boxData.weight;
+      data.mainJson[boxNameId + 2][boxIndex] = boxData.width;
+      data.mainJson[boxNameId + 3][boxIndex] = boxData.length;
+      data.mainJson[boxNameId + 4][boxIndex] = boxData.height;
+
+      // Save updated data
+      saveImportData(data).then(() => {
+        // Reload boxes to show the updated list
+        loadBoxes();
+      });
+    });
+  };
 
   useEffect(() => {
     loadBoxes();
@@ -295,7 +345,11 @@ const BoxSummary = () => {
       </div>
       <div className="row">
         <div className="col-md-4">
-          <BoxList boxes={boxes} onSelect={onListClicked} />
+          <BoxList
+            boxes={boxes}
+            onSelect={onListClicked}
+            onEdit={handleEditBox}
+          />
         </div>
         <div className="col-md-8">
           <BoxContent
@@ -319,6 +373,20 @@ const BoxSummary = () => {
           <AddBoxForm
             onSubmit={handleAddBoxSubmit}
             onCancel={() => setShowAddModal(false)}
+          />
+        </Modal.Body>
+      </Modal>
+
+      {/* Edit Box Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Box Properties</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <EditBoxForm
+            box={currentEditBox.data}
+            onSubmit={handleEditBoxSubmit}
+            onCancel={() => setShowEditModal(false)}
           />
         </Modal.Body>
       </Modal>

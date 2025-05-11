@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { Button } from "react-bootstrap";
 
-const BoxList = ({ boxes, onAdd, onSelect }) => {
+const BoxList = ({ boxes, onEdit, onSelect }) => {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -17,6 +18,9 @@ const BoxList = ({ boxes, onAdd, onSelect }) => {
                 style={{ cursor: "pointer" }}
               >
                 {box}
+                <Button variant="white-bule" onClick={() => onEdit(index, box)}>
+                  Edit
+                </Button>
               </li>
             )
         )}
