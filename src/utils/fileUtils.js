@@ -34,14 +34,28 @@ export async function parseExcelFile(file) {
               defval: "",
             })
           : null;
-        const mainJson = XLSX.utils.sheet_to_json(mainDataSheet, {
+        const json = XLSX.utils.sheet_to_json(mainDataSheet, {
           header: 1,
           defval: "",
         });
+        let mainJson = [];
+        let length = 0;
+        for(let i in json[4]) {
+          if(json[4][i]===""&& i > 12) {
+            length = i;
+            break;
+          }
+        }
+        json.map((item) =>{
+          let array_item = [];
+          for(let i = 0;i<length;i++) {
+            array_item.push(item[i]);
+          }
+          mainJson.push(array_item);
+        })
         const metadataData = metadataSheet
           ? XLSX.utils.sheet_to_json(metadataSheet, { header: 1, defval: "" })
           : null;
-        console.log("Parsed main data sheet (json):", mainJson);
 
         resolve({
           mainJson,
@@ -65,10 +79,10 @@ export async function parseExcelFile(file) {
   });
 }
 
-export function exportAmazonFormat(assignments, importData) {
+export function exportAmazonFormat(importData) {
   let nullnum = [];
   let box_merge_num = 0;
-  let max = assignments.mainJson.length;
+  let max = importData.mainJson.length;
 
   const wb = XLSX.utils.book_new();
   const ws_data = [];
@@ -88,10 +102,10 @@ export function exportAmazonFormat(assignments, importData) {
   // 2. Create and Add BoxSummary Sheet (your main output)
 
   for (let i = 0; i < max; i++) {
-    if (assignments.mainJson[i][0] === "") {
+    if (importData.mainJson[i][0] === "") {
       nullnum.push(i);
     }
-    ws_data.push(assignments.mainJson[i]);
+    ws_data.push(importData.mainJson[i]);
   }
 
   box_merge_num = nullnum[1];
@@ -145,12 +159,12 @@ export function exportAmazonFormat(assignments, importData) {
   XLSX.writeFile(wb, "FBA_with_details.xlsx"); // Changed filename
 }
 
-export function exportBoxSummary(assignments) {
+export function exportBoxSummary(importData) {
   const wb = XLSX.utils.book_new();
-  let max = assignments.mainJson.length;
+  let max = importData.mainJson.length;
   let nullnum = [];
   for (let i = 0; i < max; i++) {
-    if (assignments.mainJson[i][0] === "") {
+    if (importData.mainJson[i][0] === "") {
       nullnum.push(i);
     }
   }

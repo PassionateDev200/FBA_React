@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from "react";
 
-const BoxList = ({ boxes, onAdd, onRemove, onSelect, selectedBoxId }) => {
-  console.log("--------------- BoxList.jsx ------------", boxes);
+const BoxList = ({ boxes, onAdd, onSelect }) => {
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-2">
         <h5>Boxes : Weight, W X L X H (in)</h5>
-        <button className="btn btn-primary btn-sm" onClick={onAdd}>
-          Add
-        </button>
       </div>
       <ul className="list-group">
         {boxes.map(

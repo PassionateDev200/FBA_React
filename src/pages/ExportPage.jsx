@@ -12,7 +12,7 @@ const ExportPage = () => {
   }, []);
 
   const handleExportAmazon = () => {
-    exportAmazonFormat(assignments, importData);
+    exportAmazonFormat(importData);
   };
 
   const handleExportSummary = () => {

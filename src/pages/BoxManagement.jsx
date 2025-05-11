@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getImportData, saveBoxAssignments } from "../utils/storage";
+import { getImportData, saveImportData } from "../utils/storage";
 import { useNavigate } from "react-router-dom";
 import ValidationAlerts from "../components/ValidationAlerts";
 
@@ -18,7 +18,7 @@ function BoxContentEntry() {
   }, [navigate]);
 
   const handleSave = async () => {
-    await saveBoxAssignments(importData);
+    await saveImportData(importData);
     navigate("/export");
   };
 

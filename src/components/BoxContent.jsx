@@ -1,7 +1,8 @@
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const BoxContent = ({ box, boxName }) => {
+const BoxContent = ({ box, boxName, addItem }) => {
+
   return (
     <div className="card mb-4 shadow-sm">
       <div className="card-header bg-primary text-white">
@@ -9,7 +10,7 @@ const BoxContent = ({ box, boxName }) => {
       </div>
       <div className="card-body">
         <div className="input-group mb-3">
-          <button className="btn btn-success" disabled>
+          <button className="btn btn-success">
             Add
           </button>
         </div>
@@ -24,7 +25,7 @@ const BoxContent = ({ box, boxName }) => {
           </thead>
           <tbody>
             {box.map((detail, index) =>
-              detail.quantity !== '' && (
+              detail.quantity!== '' && (
                 <tr key={index}>
                   <td>{detail.fnsku}</td>
                   <td>{detail.quantity}</td>
