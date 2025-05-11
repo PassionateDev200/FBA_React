@@ -161,11 +161,61 @@ export function exportAmazonFormat(importData) {
 
 export function exportBoxSummary(importData) {
   const wb = XLSX.utils.book_new();
-  let max = importData.mainJson.length;
-  let nullnum = [];
-  for (let i = 0; i < max; i++) {
-    if (importData.mainJson[i][0] === "") {
-      nullnum.push(i);
+  let boxNameId = 0;
+  
+  // Find the box name row index
+  for (let i = 0; i < importData.mainJson.length; i++) {
+    if (importData.mainJson[i][0] === "Name of box") {
+      boxNameId = i;
+      break;
     }
   }
+  
+  // Extract box details arrays
+  const name = importData.mainJson[boxNameId];
+  const weight = importData.mainJson[boxNameId + 1];
+  const width = importData.mainJson[boxNameId + 2];
+  const length = importData.mainJson[boxNameId + 3];
+  const height = importData.mainJson[boxNameId + 4];
+  
+  // Create worksheet data array
+  const ws_data = [["Box Summary with FNSKU Details"]];
+  
+  // Process each box
+  for (let i = 1; i < name.length; i++) {
+    // Skip empty boxes
+    if (name[i] === "") continue;
+    
+    // Format box header details
+    const boxHeader = `${name[i]}: ${weight[i]}(lb) , ${width[i]} x ${length[i]} x ${height[i]}(inch)`;
+    
+    // Get FNSKU items for this box
+    const boxItems = [];
+    importData.mainJson.forEach((row, idx) => {
+      // Only process rows that have FNSKU information (column 4)
+      if (idx > 4 && row[4] !== "" && row[i] && row[i] !== "") {
+        boxItems.push(`${row[4]} - ${row[i]}`);
+      }
+    });
+    
+    console.log("---------boxItems------------", boxItems);
+    // Add box data to worksheet
+    if (boxItems.length > 0) {
+      ws_data.push([boxHeader + ": " + boxItems.join(", ")]);
+    } else {
+      ws_data.push([boxHeader + ": No items"]);
+    }
+  }
+  
+  // Create worksheet and add to workbook
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  
+  // Set column width
+  ws['!cols'] = [{ wch: 150 }]; // Set column width to accommodate long entries
+  
+  // Add worksheet to workbook
+  XLSX.utils.book_append_sheet(wb, ws, "Box Summary");
+  
+  // Write file
+  XLSX.writeFile(wb, "BoxSummary.xlsx");
 }

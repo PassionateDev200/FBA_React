@@ -3,11 +3,9 @@ import { getBoxAssignments, getImportData } from "../utils/storage";
 import { exportAmazonFormat, exportBoxSummary } from "../utils/fileUtils";
 
 const ExportPage = () => {
-  const [assignments, setAssignments] = useState(null);
   const [importData, setImportData] = useState(null);
 
   useEffect(() => {
-    getBoxAssignments().then(setAssignments);
     getImportData().then(setImportData);
   }, []);
 
@@ -16,7 +14,7 @@ const ExportPage = () => {
   };
 
   const handleExportSummary = () => {
-    exportBoxSummary(assignments);
+    exportBoxSummary(importData);
   };
 
   return (

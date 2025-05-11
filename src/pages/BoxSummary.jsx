@@ -141,7 +141,7 @@ const BoxSummary = () => {
       data.mainJson[boxNameId + 3].push(boxData.length);
       data.mainJson[boxNameId + 4].push(boxData.height);
 
-      // // Save updated data
+      // Save updated data
       saveImportData(data).then(() => {
         // Reload boxes to show the updated list
         loadBoxes();
