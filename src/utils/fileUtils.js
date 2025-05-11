@@ -198,7 +198,6 @@ export function exportBoxSummary(importData) {
       }
     });
     
-    console.log("---------boxItems------------", boxItems);
     // Add box data to worksheet
     if (boxItems.length > 0) {
       ws_data.push([boxHeader + ": " + boxItems.join(", ")]);
