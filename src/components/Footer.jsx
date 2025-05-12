@@ -92,8 +92,8 @@ const Footer = () => {
               </li>
               <li>
                 <EnvelopeFill className="me-2" />
-                <a href="mailto:support@edenwebinc.com">
-                  support@edenwebinc.com
+                <a href="mailto:sweetdream0828@gmail.com">
+                  sweetdream0828@gmail.com
                 </a>
               </li>
               <li>
