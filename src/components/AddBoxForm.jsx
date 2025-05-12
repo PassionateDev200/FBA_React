@@ -1,14 +1,40 @@
 // AddBoxForm.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Button } from "react-bootstrap";
+import { getImportData } from "../utils/storage";
 
 const AddBoxForm = ({ onSubmit, onCancel }) => {
   const [boxData, setBoxData] = useState({
+    boxName: "",
     weight: "",
     width: "",
     length: "",
     height: "",
   });
+
+  const newBoxData = () => {
+    getImportData().then((data) => {
+      // if (!data) return;
+
+      let boxNameId = 0;
+      for (let i = 0; i < data.mainJson.length; i++) {
+        if (data.mainJson[i][0] === "Name of box") {
+          boxNameId = i;
+          break;
+        }
+      }
+
+      let current_length = data.mainJson[4].length - 11;
+      setBoxData((prev) => ({
+        ...prev,
+        boxName: `P1 - B${current_length}`,
+      }));
+    });
+  };
+
+  useEffect(() => {
+    newBoxData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,6 +51,16 @@ const AddBoxForm = ({ onSubmit, onCancel }) => {
 
   return (
     <Form onSubmit={handleSubmit}>
+      <Form.Group className="mb-3">
+        <Form.Label>Name</Form.Label>
+        <Form.Control
+          type="string"
+          name="boxname"
+          value={boxData.boxName}
+          onChange={handleChange}
+          required
+        />
+      </Form.Group>
       <Form.Group className="mb-3">
         <Form.Label>Weight (lb)</Form.Label>
         <Form.Control

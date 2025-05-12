@@ -1,14 +1,14 @@
 // EditBoxForm.jsx
-import React, { useState, useEffect } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import React, { useState, useEffect } from "react";
+import { Form, Button } from "react-bootstrap";
 
 const EditBoxForm = ({ box, onSubmit, onCancel }) => {
   const [boxData, setBoxData] = useState({
-    name: '',
-    weight: '',
-    width: '',
-    length: '',
-    height: ''
+    boxName: "",
+    weight: "",
+    width: "",
+    length: "",
+    height: "",
   });
 
   useEffect(() => {
@@ -17,14 +17,14 @@ const EditBoxForm = ({ box, onSubmit, onCancel }) => {
       const nameMatch = box.match(/^(.*?):/);
       const weightMatch = box.match(/(\d+)\(lb\)/);
       const dimensionsMatch = box.match(/(\d+) x (\d+) x (\d+)\(inch\)/);
-      
+
       if (nameMatch && weightMatch && dimensionsMatch) {
         setBoxData({
-          name: nameMatch[1].trim(),
+          boxName: nameMatch[1].trim(),
           weight: weightMatch[1],
           width: dimensionsMatch[1],
           length: dimensionsMatch[2],
-          height: dimensionsMatch[3]
+          height: dimensionsMatch[3],
         });
       }
     }
@@ -32,9 +32,9 @@ const EditBoxForm = ({ box, onSubmit, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setBoxData(prev => ({
+    setBoxData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -47,59 +47,59 @@ const EditBoxForm = ({ box, onSubmit, onCancel }) => {
     <Form onSubmit={handleSubmit}>
       <Form.Group className="mb-3">
         <Form.Label>Box Name</Form.Label>
-        <Form.Control 
-          type="text" 
-          name="name" 
-          value={boxData.name} 
+        <Form.Control
+          type="text"
+          name="name"
+          value={boxData.boxName}
           onChange={handleChange}
           disabled
         />
       </Form.Group>
-      
+
       <Form.Group className="mb-3">
         <Form.Label>Weight (lb)</Form.Label>
-        <Form.Control 
-          type="number" 
-          name="weight" 
-          value={boxData.weight} 
+        <Form.Control
+          type="number"
+          name="weight"
+          value={boxData.weight}
           onChange={handleChange}
-          required 
+          required
         />
       </Form.Group>
-      
+
       <Form.Group className="mb-3">
         <Form.Label>Width (inch)</Form.Label>
-        <Form.Control 
-          type="number" 
-          name="width" 
-          value={boxData.width} 
+        <Form.Control
+          type="number"
+          name="width"
+          value={boxData.width}
           onChange={handleChange}
-          required 
+          required
         />
       </Form.Group>
-      
+
       <Form.Group className="mb-3">
         <Form.Label>Length (inch)</Form.Label>
-        <Form.Control 
-          type="number" 
-          name="length" 
-          value={boxData.length} 
+        <Form.Control
+          type="number"
+          name="length"
+          value={boxData.length}
           onChange={handleChange}
-          required 
+          required
         />
       </Form.Group>
-      
+
       <Form.Group className="mb-3">
         <Form.Label>Height (inch)</Form.Label>
-        <Form.Control 
-          type="number" 
-          name="height" 
-          value={boxData.height} 
+        <Form.Control
+          type="number"
+          name="height"
+          value={boxData.height}
           onChange={handleChange}
-          required 
+          required
         />
       </Form.Group>
-      
+
       <div className="d-flex justify-content-end gap-2">
         <Button variant="secondary" onClick={onCancel}>
           Cancel
