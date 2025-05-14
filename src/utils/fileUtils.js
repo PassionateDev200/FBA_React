@@ -40,12 +40,14 @@ export async function parseExcelFile(file) {
         });
         let mainJson = [];
         let length = 0;
+
         for (let i in json[4]) {
-          if (json[4][i] === "" && i > 12) {
+          if ((json[4][i] === "" || json[4][12] === 0) && i > 11) {
             length = i;
             break;
           }
         }
+
         json.map((item) => {
           let array_item = [];
           for (let i = 0; i < length; i++) {
@@ -162,7 +164,7 @@ export function exportAmazonFormat(importData) {
 export function exportBoxSummary(importData) {
   const wb = XLSX.utils.book_new();
   let boxNameId = 0;
-  
+
   // Find the box name row index
   for (let i = 0; i < importData.mainJson.length; i++) {
     if (importData.mainJson[i][0] === "Name of box") {
@@ -170,25 +172,25 @@ export function exportBoxSummary(importData) {
       break;
     }
   }
-  
+
   // Extract box details arrays
   const name = importData.mainJson[boxNameId];
   const weight = importData.mainJson[boxNameId + 1];
   const width = importData.mainJson[boxNameId + 2];
   const length = importData.mainJson[boxNameId + 3];
   const height = importData.mainJson[boxNameId + 4];
-  
+
   // Create worksheet data array
   const ws_data = [["Box Summary with FNSKU Details"]];
-  
+
   // Process each box
   for (let i = 1; i < name.length; i++) {
     // Skip empty boxes
     if (name[i] === "") continue;
-    
+
     // Format box header details
     const boxHeader = `${name[i]}: ${weight[i]}(lb) , ${width[i]} x ${length[i]} x ${height[i]}(inch)`;
-    
+
     // Get FNSKU items for this box
     const boxItems = [];
     importData.mainJson.forEach((row, idx) => {
@@ -197,7 +199,7 @@ export function exportBoxSummary(importData) {
         boxItems.push(`${row[4]} - ${row[i]}`);
       }
     });
-    
+
     // Add box data to worksheet
     if (boxItems.length > 0) {
       ws_data.push([boxHeader + ": " + boxItems.join(", ")]);
@@ -205,16 +207,16 @@ export function exportBoxSummary(importData) {
       ws_data.push([boxHeader + ": No items"]);
     }
   }
-  
+
   // Create worksheet and add to workbook
   const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  
+
   // Set column width
-  ws['!cols'] = [{ wch: 150 }]; // Set column width to accommodate long entries
-  
+  ws["!cols"] = [{ wch: 150 }]; // Set column width to accommodate long entries
+
   // Add worksheet to workbook
   XLSX.utils.book_append_sheet(wb, ws, "Box Summary");
-  
+
   // Write file
   XLSX.writeFile(wb, "BoxSummary.xlsx");
 }

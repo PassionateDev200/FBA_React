@@ -366,7 +366,7 @@ function BoxManagement() {
       <Card className="shadow-sm mb-4">
         <Card.Body>
           <div className="table-responsive">
-            <table className="table table-hover">
+            <table className="table table-hover text-center">
               <tbody>
                 {/* sku[4] : FNSKU */}
                 {importData.mainJson.map(
@@ -384,22 +384,7 @@ function BoxManagement() {
                         </td>
                         <td className="align-middle">{sku[3]}</td>
                         <td className="align-middle">{sku[4]}</td>
-                        <td className="align-middle">
-                          {index === 4 ? (
-                            sku[9]
-                          ) : (
-                            <Form.Control
-                              type="number"
-                              min={0}
-                              value={importData.mainJson[index][9] || "0"}
-                              style={{ maxWidth: 120 }}
-                              onChange={(e) => {
-                                handleQuantityChange(index, e.target.value);
-                              }}
-                              onBlur={() => saveImportData(importData)} // Save when focus leaves
-                            />
-                          )}
-                        </td>
+                        <td className="align-middle">{sku[9]}</td>
                         <td className="align-middle">
                           {/* Added color-coded badges */}
                           <Badge
@@ -458,9 +443,8 @@ function BoxManagement() {
         </Card.Body>
       </Card>
 
-      <div className="d-flex justify-content-between align-items-center">
+      {/* <div className="d-flex justify-content-between align-items-center">
         <ValidationAlerts validation={validation} />
-        {/* Enhanced save button with loading state */}
         <Button
           variant="primary"
           size="lg"
@@ -486,7 +470,7 @@ function BoxManagement() {
             </>
           )}
         </Button>
-      </div>
+      </div> */}
 
       {/* Improved Add/Edit Product Modal */}
       <Modal
