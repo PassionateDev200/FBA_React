@@ -82,8 +82,8 @@ export async function parseExcelFile(file) {
 }
 
 export function exportAmazonFormat(importData) {
-  let nullnum = [];
   let box_merge_num = 0;
+  let box_counter = -1;
   let max = importData.mainJson.length;
 
   const wb = XLSX.utils.book_new();
@@ -104,13 +104,20 @@ export function exportAmazonFormat(importData) {
   // 2. Create and Add BoxSummary Sheet (your main output)
 
   for (let i = 0; i < max; i++) {
-    if (importData.mainJson[i][0] === "") {
-      nullnum.push(i);
+    if (importData.mainJson[i][0] === "Name of box") {
+      box_merge_num = i;
     }
     ws_data.push(importData.mainJson[i]);
   }
 
-  box_merge_num = nullnum[1];
+  const boxCount = importData.mainJson[box_merge_num];
+  for (let i = 0; i < boxCount.length; i++) {
+    if (boxCount[i] !== "") {
+      box_counter++;
+    }
+  }
+
+  importData.mainJson[2][12] = box_counter;
 
   const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
@@ -136,7 +143,7 @@ export function exportAmazonFormat(importData) {
         e: { r: i, c: 11 }, // End at column C
       });
     } else if (box_merge_num === i) {
-      for (let j = 1; j <= 5; j++) {
+      for (let j = 0; j <= 4; j++) {
         ws["!merges"].push({
           s: { r: i + j, c: 0 }, // Start at column A
           e: { r: i + j, c: 11 }, // End at column C
@@ -202,9 +209,9 @@ export function exportBoxSummary(importData) {
 
     // Add box data to worksheet
     if (boxItems.length > 0) {
-      ws_data.push([boxHeader + ": " + boxItems.join(", ")]);
+      ws_data.push([boxHeader + "|   " + boxItems.join(", ")]);
     } else {
-      ws_data.push([boxHeader + ": No items"]);
+      ws_data.push([boxHeader + "|    No items"]);
     }
   }
 
