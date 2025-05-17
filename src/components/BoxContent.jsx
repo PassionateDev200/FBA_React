@@ -34,6 +34,9 @@ const BoxContent = ({
   // State for form data
   const [formData, setFormData] = useState({
     fnsku: "",
+    title: "",
+    asin: "",
+    sku: "",
     quantity: 1,
   });
 
@@ -48,6 +51,9 @@ const BoxContent = ({
     // Reset form data when closing
     setFormData({
       fnsku: "",
+      title: "",
+      asin: "",
+      sku: "",
       quantity: 1,
     });
   };
@@ -113,8 +119,11 @@ const BoxContent = ({
           </div>
         ) : (
           <table className="table table-hover">
-            <thead className="table-light">
+            <thead className="table-light text-center">
               <tr>
+                <th>SKU</th>
+                <th>Title</th>
+                <th>ASIN</th>
                 <th>FNSKU</th>
                 <th>Quantity</th>
                 <th className="text-center">Action</th>
@@ -126,9 +135,18 @@ const BoxContent = ({
                   detail.quantity !== "" && (
                     <tr key={index} className="align-middle">
                       <td>
-                        <span className="fw-semibold">{detail.fnsku}</span>
+                        <span className="fw-semibold">{detail.sku}</span>
                       </td>
                       <td>
+                        <span className="fw-semibold">{detail.title}</span>
+                      </td>
+                      <td>
+                        <span className="fw-semibold">{detail.asin}</span>
+                      </td>
+                      <td>
+                        <span className="fw-semibold">{detail.fnsku}</span>
+                      </td>
+                      <td className="text-center">
                         <Badge bg="dark" pill className="px-3 py-2">
                           {detail.quantity}
                         </Badge>

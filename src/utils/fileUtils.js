@@ -182,10 +182,10 @@ export function exportBoxSummary(importData) {
 
   // Extract box details arrays
   const name = importData.mainJson[boxNameId];
-  const weight = importData.mainJson[boxNameId + 1];
-  const width = importData.mainJson[boxNameId + 2];
-  const length = importData.mainJson[boxNameId + 3];
-  const height = importData.mainJson[boxNameId + 4];
+  // const weight = importData.mainJson[boxNameId + 1];
+  // const width = importData.mainJson[boxNameId + 2];
+  // const length = importData.mainJson[boxNameId + 3];
+  // const height = importData.mainJson[boxNameId + 4];
 
   // Create worksheet data array
   const ws_data = [["Box Summary with FNSKU Details"]];
@@ -196,8 +196,8 @@ export function exportBoxSummary(importData) {
     if (name[i] === "") continue;
 
     // Format box header details
-    const boxHeader = `${name[i]}: ${weight[i]}(lb) , ${width[i]} x ${length[i]} x ${height[i]}(inch)`;
-
+    // const boxHeader = `${name[i]}: ${weight[i]}(lb) , ${width[i]} x ${length[i]} x ${height[i]}(inch)`;
+    const boxHeader = `${name[i]}`;
     // Get FNSKU items for this box
     const boxItems = [];
     importData.mainJson.forEach((row, idx) => {

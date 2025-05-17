@@ -61,6 +61,7 @@ const AddBoxForm = ({ onSubmit, onCancel }) => {
           required
         />
       </Form.Group>
+      {/*
       <Form.Group className="mb-3">
         <Form.Label>Weight (lb)</Form.Label>
         <Form.Control
@@ -104,6 +105,7 @@ const AddBoxForm = ({ onSubmit, onCancel }) => {
           required
         />
       </Form.Group>
+      */}
 
       <div className="d-flex justify-content-end gap-2">
         <Button variant="secondary" onClick={onCancel}>

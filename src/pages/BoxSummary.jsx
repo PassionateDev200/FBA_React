@@ -118,21 +118,25 @@ const BoxSummary = () => {
 
       boxArray.push(name[0]);
       for (let i = 1; i < name.length; i++) {
-        if (name[i] !== "") {
-          boxArray.push(
-            name[i] +
-              ": " +
-              weight[i] +
-              "(lb) , " +
-              width[i] +
-              " x " +
-              length[i] +
-              " x " +
-              height[i] +
-              "(inch)"
-          );
-        } else if (i < 12) {
+        if (i < 12) {
           boxArray.push("");
+        } else if (name[i] !== "") {
+          if (weight[i] !== "") {
+            boxArray.push(
+              name[i] +
+                ": " +
+                weight[i] +
+                "(lb) , " +
+                width[i] +
+                " x " +
+                length[i] +
+                " x " +
+                height[i] +
+                "(inch)"
+            );
+          } else {
+            boxArray.push(name[i] + ":" + "W x L x H (inch)");
+          }
         }
       }
 
@@ -153,7 +157,13 @@ const BoxSummary = () => {
           (data, idx) =>
             idx > 4 &&
             data[4] !== "" &&
-            detail.push({ quantity: data[index], fnsku: data[4] })
+            detail.push({
+              quantity: data[index],
+              fnsku: data[4],
+              title: data[1],
+              asin: data[3],
+              sku: data[0],
+            })
         )
       );
       setBoxDetail(detail);
