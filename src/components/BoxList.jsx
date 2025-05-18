@@ -1,5 +1,4 @@
-// export default BoxList;
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Button, Badge } from "react-bootstrap";
 import {
   BoxSeamFill,
@@ -8,18 +7,13 @@ import {
   ChevronLeft,
   ChevronRight,
   InboxesFill,
-  BoxArrowUpRight,
 } from "react-bootstrap-icons";
+import { useBoxState, useBoxActions } from "../context/BoxContent";
 
 const BoxList = ({ boxes, onEdit, onSelect }) => {
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(5);
-  const [selectedBoxId, setSelectedBoxId] = useState(null);
-
-  // Use ref to track if the boxes array actually changed
-  const prevBoxesLength = useRef(boxes.length);
-  const isSelectionChange = useRef(false);
+  // Get state and actions from context
+  const { currentPage, selectedBoxId, itemsPerPage } = useBoxState();
+  const { setCurrentPage, setSelectedBox, setTotalPages } = useBoxActions();
 
   // Filter boxes as in original code
   const filteredBoxes = boxes.filter((_, index) => index > 11);
@@ -32,17 +26,10 @@ const BoxList = ({ boxes, onEdit, onSelect }) => {
   // Calculate total number of pages
   const totalPages = Math.ceil(filteredBoxes.length / itemsPerPage);
 
-  // Reset to page 1 ONLY if boxes array length changes (not on selection)
+  // Update total pages when it changes
   useEffect(() => {
-    if (
-      prevBoxesLength.current !== boxes.length &&
-      !isSelectionChange.current
-    ) {
-      setCurrentPage(1);
-    }
-    prevBoxesLength.current = boxes.length;
-    isSelectionChange.current = false;
-  }, [boxes]);
+    setTotalPages(totalPages);
+  }, [totalPages, setTotalPages]);
 
   // Function to get original index in the boxes array
   const getOriginalIndex = (pageIndex) => {
@@ -62,27 +49,10 @@ const BoxList = ({ boxes, onEdit, onSelect }) => {
     return actualIndex;
   };
 
-  // Handle box selection - mark that this is a selection change
+  // Handle box selection
   const handleSelect = (originalIndex) => {
-    isSelectionChange.current = true;
-    setSelectedBoxId(originalIndex);
-    onSelect(originalIndex);
-  };
-
-  // Find which page contains the selected box and navigate to it
-  const goToPageContainingBox = (boxId) => {
-    if (boxId === null) return;
-
-    // Find the index in filteredBoxes
-    const indexInFiltered = filteredBoxes.findIndex((_, i) => {
-      const originalIndex = i + 12; // Since we filter boxes > 11
-      return originalIndex === boxId;
-    });
-
-    if (indexInFiltered !== -1) {
-      const targetPage = Math.floor(indexInFiltered / itemsPerPage) + 1;
-      setCurrentPage(targetPage);
-    }
+    setSelectedBox(originalIndex); // Update in context
+    onSelect(originalIndex); // Call parent callback
   };
 
   return (
@@ -116,7 +86,6 @@ const BoxList = ({ boxes, onEdit, onSelect }) => {
                   originalIndex === selectedBoxId ? "selected-box" : ""
                 }`}
                 onClick={() => handleSelect(originalIndex)}
-                style={{ cursor: "pointer" }}
               >
                 <div className="d-flex align-items-center">
                   <div className="box-icon me-3">
@@ -159,7 +128,7 @@ const BoxList = ({ boxes, onEdit, onSelect }) => {
           <div className="d-flex justify-content-between align-items-center">
             <Button
               variant={currentPage === 1 ? "light" : "outline-dark"}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
               disabled={currentPage === 1}
               size="sm"
               className="d-flex align-items-center"
@@ -167,16 +136,6 @@ const BoxList = ({ boxes, onEdit, onSelect }) => {
               <ChevronLeft /> Prev
             </Button>
 
-            {/* Add the Go to Selected Box button here */}
-            <Button
-              variant="outline-primary"
-              size="sm"
-              onClick={() => goToPageContainingBox(selectedBoxId)}
-              disabled={selectedBoxId === null}
-              className="d-flex align-items-center"
-            >
-              <BoxArrowUpRight className="me-1" /> Go to Box
-            </Button>
             <div className="d-flex align-items-center">
               <small className="text-muted">
                 Page {currentPage} of {totalPages}
@@ -186,7 +145,7 @@ const BoxList = ({ boxes, onEdit, onSelect }) => {
             <Button
               variant={currentPage === totalPages ? "light" : "outline-dark"}
               onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                setCurrentPage(Math.min(currentPage + 1, totalPages))
               }
               disabled={currentPage === totalPages}
               size="sm"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useBoxActions } from "../context/BoxContent";
 import BoxList from "../components/BoxList";
 import BoxContent from "../components/BoxContent";
 import { getImportData, saveImportData } from "../utils/storage";
@@ -15,6 +16,7 @@ import {
 import { toast } from "react-toastify";
 
 const BoxSummary = () => {
+  const { setSelectedBox } = useBoxActions();
   const [boxes, setBoxes] = useState([]);
   const [importData, setImportData] = useState({});
   const [selectId, setSelectId] = useState(0);
@@ -210,11 +212,22 @@ const BoxSummary = () => {
       data.mainJson[boxNameId + 3].push(boxData.length);
       data.mainJson[boxNameId + 4].push(boxData.height);
 
+      const newBoxIndex = data.mainJson[boxNameId].length - 1;
       // Save updated data
       saveImportData(data).then(() => {
         // Reload boxes to show the updated list
         loadBoxes();
-        toast.success(`Box "${boxData.boxName}" added successfully!`);
+
+        // Use setTimeout to ensure boxes are loaded
+        setTimeout(() => {
+          // Set the selected box in the global context
+          setSelectedBox(newBoxIndex);
+
+          // Call your existing selection function
+          onListClicked(newBoxIndex);
+
+          toast.success(`Box "${boxData.boxName}" added successfully!`);
+        }, 100);
       });
     });
   };
