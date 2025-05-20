@@ -120,6 +120,7 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
                     className="me-2 d-inline-flex align-items-center"
                     onClick={(e) => {
                       e.stopPropagation();
+                      handleSelect(originalIndex); // Select the box first
                       onEdit(originalIndex, box);
                     }}
                   >
@@ -133,6 +134,7 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
                     className="d-inline-flex align-items-center text-danger"
                     onClick={(e) => {
                       e.stopPropagation();
+                      handleSelect(originalIndex); // Select the box first
                       onRemoveBox(originalIndex);
                     }}
                   >

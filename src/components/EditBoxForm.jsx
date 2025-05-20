@@ -12,20 +12,50 @@ const EditBoxForm = ({ box, onSubmit, onCancel }) => {
   });
 
   useEffect(() => {
-    // Parse the box string to get individual properties
+    // Reset form to prevent stale data
+    setBoxData({
+      boxName: "",
+      weight: "",
+      width: "",
+      length: "",
+      height: "",
+    });
+
+    // Extract data from the box string if available
     if (box) {
+      console.log("EditBoxForm ===>", box);
+
+      // Get box name independently - covers both formats
+      // This will match everything before the colon
       const nameMatch = box.match(/^(.*?):/);
+      if (nameMatch) {
+        // Always update the box name if we can extract it
+        setBoxData((prev) => ({
+          ...prev,
+          boxName: nameMatch[1].trim(),
+        }));
+      }
+
+      // Try to get weight and dimensions if available
       const weightMatch = box.match(/(\d+)\(lb\)/);
       const dimensionsMatch = box.match(/(\d+) x (\d+) x (\d+)\(inch\)/);
 
-      if (nameMatch && weightMatch && dimensionsMatch) {
-        setBoxData({
-          boxName: nameMatch[1].trim(),
+      // Update weight if available
+      if (weightMatch) {
+        setBoxData((prev) => ({
+          ...prev,
           weight: weightMatch[1],
+        }));
+      }
+
+      // Update dimensions if available
+      if (dimensionsMatch) {
+        setBoxData((prev) => ({
+          ...prev,
           width: dimensionsMatch[1],
           length: dimensionsMatch[2],
           height: dimensionsMatch[3],
-        });
+        }));
       }
     }
   }, [box]);

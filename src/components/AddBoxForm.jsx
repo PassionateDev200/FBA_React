@@ -12,10 +12,38 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
     height: "",
   });
 
+  // const newBoxData = () => {
+  //   getImportData(shipmentID).then((data) => {
+  //     // if (!data) return;
+
+  //     let boxNameId = 0;
+  //     for (let i = 0; i < data.mainJson.length; i++) {
+  //       if (data.mainJson[i][0] === "Name of box") {
+  //         boxNameId = i;
+  //         break;
+  //       }
+  //     }
+
+  //     let current_length = data.mainJson[4].length - 11;
+
+  //     setBoxData((prev) => ({
+  //       ...prev,
+  //       boxName: `P1 - B${current_length}`,
+  //     }));
+  //   });
+  // };
   const newBoxData = () => {
     getImportData(shipmentID).then((data) => {
-      // if (!data) return;
+      if (!data || !data.mainJson) {
+        // Default to B1 if no data
+        setBoxData((prev) => ({
+          ...prev,
+          boxName: "P1 - B1",
+        }));
+        return;
+      }
 
+      // Find the box name row
       let boxNameId = 0;
       for (let i = 0; i < data.mainJson.length; i++) {
         if (data.mainJson[i][0] === "Name of box") {
@@ -24,10 +52,39 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
         }
       }
 
-      let current_length = data.mainJson[4].length - 11;
+      // If no box name row found, default to B1
+      if (boxNameId === 0) {
+        setBoxData((prev) => ({
+          ...prev,
+          boxName: "P1 - B1",
+        }));
+        return;
+      }
+
+      // Extract all box numbers from existing box names
+      const boxNumbers = [];
+      for (let i = 1; i < data.mainJson[boxNameId].length; i++) {
+        const boxName = data.mainJson[boxNameId][i];
+        if (boxName && boxName !== "") {
+          // Extract the numeric part after "B" (e.g., from "P1 - B4" extract 4)
+          const match = boxName.match(/B(\d+)$/);
+          if (match && match[1]) {
+            boxNumbers.push(parseInt(match[1], 10));
+          }
+        }
+      }
+
+      // Find the highest box number
+      const highestBoxNumber =
+        boxNumbers.length > 0 ? Math.max(...boxNumbers) : 0;
+
+      // Increment by 1 for the new box name
+      const nextBoxNumber = highestBoxNumber + 1;
+
+      // Set the new box name
       setBoxData((prev) => ({
         ...prev,
-        boxName: `P1 - B${current_length}`,
+        boxName: `P1 - B${nextBoxNumber}`,
       }));
     });
   };

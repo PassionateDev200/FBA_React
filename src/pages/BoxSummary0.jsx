@@ -350,10 +350,14 @@ const BoxSummary0 = () => {
   };
 
   const handleRemoveBox = (boxIndex) => {
-    // Set confirmation message and action
+    // Find the box name from the current boxes array
+    const boxName = boxes[boxIndex] || `Box ${boxIndex}`;
+
+    // Set confirmation message with the actual box name
     setConfirmMessage(
-      `Are you sure you want to remove this box? All items in this box will be unboxed.`
+      `Are you sure you want to remove "${boxName}"? All items in this box will be unboxed.`
     );
+
     setConfirmAction(() => async () => {
       try {
         // Get the current data
@@ -368,6 +372,10 @@ const BoxSummary0 = () => {
           }
         }
 
+        // Store the box name for the success message
+        const boxNameForMessage =
+          data.mainJson[boxNameId][boxIndex] || `Box ${boxIndex}`;
+
         // Store items that need to be unboxed for later reference
         const boxedItems = [];
         for (let i = 5; i < data.mainJson.length; i++) {
@@ -379,7 +387,7 @@ const BoxSummary0 = () => {
             });
           }
         }
-        console.log("data.mainJson ========>", data.mainJson[boxNameId]);
+
         // 1. Remove box info from box-related arrays (name, weight, etc.)
         for (let j = 0; j <= 4; j++) {
           // Remove the box column from box-name, weight, width, length, height rows
@@ -420,7 +428,9 @@ const BoxSummary0 = () => {
         loadBoxes();
 
         setShowConfirmModal(false);
-        toast.success("Box removed successfully. Items have been unboxed.");
+        toast.success(
+          `Box "${boxNameForMessage}" removed successfully. Items have been unboxed.`
+        );
       } catch (error) {
         console.error("Error removing box:", error);
         toast.error("Failed to remove box. Please try again.");
