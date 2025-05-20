@@ -23,11 +23,10 @@ import {
 } from "react-bootstrap-icons";
 import { toast } from "react-toastify"; // Added toast notifications
 
-function BoxManagement() {
+function ProductDetail() {
   const [importData, setImportData] = useState(null);
   const [validation] = useState([]);
   const [isLoading, setIsLoading] = useState(true); // Added loading state
-  const [isSaving, setIsSaving] = useState(false); // Added saving state
   const navigate = useNavigate();
 
   // Modal states
@@ -135,20 +134,6 @@ function BoxManagement() {
 
     fetchData();
   }, [navigate]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await saveImportData(importData);
-      toast.success("Data saved successfully!");
-      navigate("/export");
-    } catch (error) {
-      console.error("Error saving data:", error);
-      toast.error("Failed to save data. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   // Open add modal with reset form
   const handleAddClick = () => {
@@ -267,13 +252,6 @@ function BoxManagement() {
       console.error("Error deleting product:", error);
       toast.error("Failed to delete product. Please try again.");
     }
-  };
-
-  // Handle quantity change in the table
-  const handleQuantityChange = (index, value) => {
-    const newData = { ...importData };
-    newData.mainJson[index][9] = value;
-    setImportData(newData);
   };
 
   // Added loading state UI
@@ -442,35 +420,6 @@ function BoxManagement() {
           </div>
         </Card.Body>
       </Card>
-
-      {/* <div className="d-flex justify-content-between align-items-center">
-        <ValidationAlerts validation={validation} />
-        <Button
-          variant="primary"
-          size="lg"
-          className="d-flex align-items-center"
-          onClick={handleSave}
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <>
-              <Spinner
-                as="span"
-                animation="border"
-                size="sm"
-                role="status"
-                aria-hidden="true"
-                className="me-2"
-              />
-              Saving...
-            </>
-          ) : (
-            <>
-              <BoxArrowRight className="me-2" /> Save & Continue
-            </>
-          )}
-        </Button>
-      </div> */}
 
       {/* Improved Add/Edit Product Modal */}
       <Modal
@@ -803,4 +752,4 @@ function BoxManagement() {
   );
 }
 
-export default BoxManagement;
+export default ProductDetail;

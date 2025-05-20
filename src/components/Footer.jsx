@@ -18,7 +18,7 @@ const Footer = () => {
   const languages = [{ code: "en", name: "English" }];
 
   return (
-    <footer className="footer-container mt-5">
+    <footer className="footer-container">
       <div className="footer-gradient-overlay"></div>
 
       {/* Main Footer Content */}
