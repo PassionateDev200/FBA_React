@@ -1,9 +1,9 @@
 // AddBoxForm.jsx
 import React, { useEffect, useState } from "react";
 import { Form, Button } from "react-bootstrap";
-import { getImportData } from "../utils/storage";
+import { getImportData } from "../utils/storage0";
 
-const AddBoxForm = ({ onSubmit, onCancel }) => {
+const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
   const [boxData, setBoxData] = useState({
     boxName: "",
     weight: "",
@@ -13,7 +13,7 @@ const AddBoxForm = ({ onSubmit, onCancel }) => {
   });
 
   const newBoxData = () => {
-    getImportData().then((data) => {
+    getImportData(shipmentID).then((data) => {
       // if (!data) return;
 
       let boxNameId = 0;

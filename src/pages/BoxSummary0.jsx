@@ -479,6 +479,7 @@ const BoxSummary0 = () => {
           <AddBoxForm
             onSubmit={handleAddBoxSubmit}
             onCancel={() => setShowAddModal(false)}
+            shipmentID={shipmentID}
           />
         </Modal.Body>
       </Modal>

@@ -94,7 +94,7 @@ function ProductDetail() {
 
   // Calculate total expected quantity and boxed quantity
   const totals = useMemo(() => {
-    if (!importData) return { expected: 0, boxed: 0 };
+    if (!importData) return { num: 0, expected: 0, boxed: 0 };
 
     // Safe parsing function
     const safeParseInt = (value) => {
@@ -110,13 +110,14 @@ function ProductDetail() {
 
     return importData.mainJson.reduce(
       (acc, item) => {
-        if (item[5] !== "") {
+        if (item[4] !== "") {
           acc.expected += safeParseInt(item[9]);
           acc.boxed += safeParseInt(item[10]);
+          acc.num++;
         }
         return acc;
       },
-      { expected: 0, boxed: 0 }
+      { expected: 0, boxed: 0, num: 0 }
     );
   }, [importData]);
 
@@ -165,10 +166,10 @@ function ProductDetail() {
       Id: "",
       ASIN: "",
       FNSKU: "",
-      condition: "",
-      prep_type: "",
+      condition: "NewItem",
+      prep_type: "Labeling",
       preps_units: "",
-      labels_units: "",
+      labels_units: "By seller",
       expected_quantity: "0",
     });
     setShowAddEditModal(true);
@@ -206,9 +207,75 @@ function ProductDetail() {
   };
 
   // Save product (add or update)
+  // const handleFormSubmit = async () => {
+  //   console.log("importData--old ====>", importData);
+  //   let insertPlace = 0;
+
+  //   for (let i = 0; i < importData.mainJson.length; i++) {
+  //     if (importData.mainJson[i][0] === "Name of box") {
+  //       insertPlace = i;
+  //     }
+  //   }
+  //   try {
+  //     const newData = { ...importData };
+
+  //     console.log("insertPlace--old ====>", insertPlace);
+
+  //     if (isEditing) {
+  //       // Update existing product
+  //       newData.mainJson[currentIndex][0] = formData.sku;
+  //       newData.mainJson[currentIndex][1] = formData.product_title;
+  //       newData.mainJson[currentIndex][2] = formData.Id;
+  //       newData.mainJson[currentIndex][3] = formData.ASIN;
+  //       newData.mainJson[currentIndex][4] = formData.FNSKU;
+  //       newData.mainJson[currentIndex][5] = formData.condition;
+  //       newData.mainJson[currentIndex][6] = formData.prep_type;
+  //       newData.mainJson[currentIndex][7] = formData.preps_units;
+  //       newData.mainJson[currentIndex][8] = formData.labels_units;
+  //       newData.mainJson[currentIndex][9] = formData.expected_quantity;
+
+  //       toast.success("Product updated successfully!");
+  //     } else {
+  //       // Add new product
+  //       const newRow = [
+  //         formData.sku,
+  //         formData.product_title,
+  //         formData.Id,
+  //         formData.ASIN,
+  //         formData.FNSKU,
+  //         formData.condition,
+  //         formData.prep_type,
+  //         formData.preps_units,
+  //         formData.labels_units,
+  //         formData.expected_quantity,
+  //         "0", // Initialize boxed quantity as column 10
+  //       ];
+
+  //       newData.mainJson.push(newRow);
+  //       toast.success("Product added successfully!");
+  //     }
+  //     setImportData(newData);
+  //     await saveImportData(newData, shipmentID); // Pass shipmentID to update lastModifiedDate
+  //     setShowAddEditModal(false);
+  //   } catch (error) {
+  //     console.error("Error saving product:", error);
+  //     toast.error("Failed to save product. Please try again.");
+  //   }
+  // };
   const handleFormSubmit = async () => {
+    console.log("importData--old ====>", importData);
+    let insertPlace = 0;
+    for (let i = 0; i < importData.mainJson.length; i++) {
+      if (importData.mainJson[i][0] === "Name of box") {
+        insertPlace = i;
+        break; // Add break to stop loop once found
+      }
+    }
+
     try {
       const newData = { ...importData };
+
+      console.log("insertPlace--old ====>", insertPlace);
 
       if (isEditing) {
         // Update existing product
@@ -225,7 +292,7 @@ function ProductDetail() {
 
         toast.success("Product updated successfully!");
       } else {
-        // Add new product
+        // Add new product at insertPlace - 1
         const newRow = [
           formData.sku,
           formData.product_title,
@@ -240,7 +307,12 @@ function ProductDetail() {
           "0", // Initialize boxed quantity as column 10
         ];
 
-        newData.mainJson.push(newRow);
+        for (let i = 0; i < newData.mainJson[4].length - 11; i++) {
+          newRow.push(""); // Add empty columns for new product
+        }
+
+        // Insert at insertPlace-1 using splice instead of pushing to the end
+        newData.mainJson.splice(insertPlace - 1, 0, newRow);
         toast.success("Product added successfully!");
       }
 
@@ -370,9 +442,7 @@ function ProductDetail() {
             <div className="col-md-4">
               <div className="d-flex align-items-center">
                 <div className="me-3">
-                  <span className="fs-5 fw-bold">
-                    {importData.mainJson.length}
-                  </span>
+                  <span className="fs-5 fw-bold">{totals.num - 1}</span>
                 </div>
                 <div>
                   <span className="text-muted">Total Products</span>

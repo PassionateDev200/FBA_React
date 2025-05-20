@@ -40,11 +40,13 @@ export async function parseExcelFile(file) {
         });
         let mainJson = [];
         let length = 0;
-
+        console.log("json", json[4]);
         for (let i in json[4]) {
           if ((json[4][i] === "" || json[4][12] === 0) && i > 11) {
             length = i;
             break;
+          } else {
+            length = json[4].length;
           }
         }
 
@@ -80,153 +82,6 @@ export async function parseExcelFile(file) {
     reader.readAsBinaryString(file);
   });
 }
-
-// export function exportAmazonFormat(importData) {
-//   let box_merge_num = 0;
-//   let box_counter = -1;
-//   let max = importData.mainJson.length;
-
-//   const wb = XLSX.utils.book_new();
-//   const ws_data = [];
-
-//   // 1. Add Instruction Sheet (if available from original import)
-//   if (importData?.originalSheetData?.instruction?.data) {
-//     const ws_instruction = XLSX.utils.aoa_to_sheet(
-//       importData.originalSheetData.instruction.data
-//     );
-//     XLSX.utils.book_append_sheet(
-//       wb,
-//       ws_instruction,
-//       importData.originalSheetData.instruction.name || "Instructions"
-//     );
-//   }
-
-//   // 2. Create and Add BoxSummary Sheet (your main output)
-
-//   for (let i = 0; i < max; i++) {
-//     if (importData.mainJson[i][0] === "Name of box") {
-//       box_merge_num = i;
-//     }
-//     ws_data.push(importData.mainJson[i]);
-//   }
-
-//   const boxCount = importData.mainJson[box_merge_num];
-//   for (let i = 0; i < boxCount.length; i++) {
-//     if (boxCount[i] !== "") {
-//       box_counter++;
-//     }
-//   }
-
-//   importData.mainJson[2][12] = box_counter;
-
-//   const ws = XLSX.utils.aoa_to_sheet(ws_data);
-
-//   ws["!merges"] = [];
-//   for (let i = 0; i < max; i++) {
-//     if (0 === i) {
-//       ws["!merges"].push({
-//         s: { r: i, c: 0 }, // Start at column A
-//         e: { r: i, c: 11 }, // End at column C
-//       });
-//     } else if (1 === i) {
-//       ws["!merges"].push({
-//         s: { r: i, c: 0 }, // Start at column A
-//         e: { r: i, c: 1 }, // End at column C
-//       });
-//     } else if (2 === i) {
-//       ws["!merges"].push({
-//         s: { r: i, c: 0 }, // Start at column A
-//         e: { r: i, c: 2 }, // End at column C
-//       });
-//       ws["!merges"].push({
-//         s: { r: i, c: 8 }, // Start at column A
-//         e: { r: i, c: 11 }, // End at column C
-//       });
-//     } else if (box_merge_num === i) {
-//       for (let j = 0; j <= 4; j++) {
-//         ws["!merges"].push({
-//           s: { r: i + j, c: 0 }, // Start at column A
-//           e: { r: i + j, c: 11 }, // End at column C
-//         });
-//       }
-//     }
-//   }
-//   XLSX.utils.book_append_sheet(wb, ws, "Box packing information");
-
-//   // 3. Add Metadata Sheet (if available from original import)
-//   if (importData?.originalSheetData?.metadata?.data) {
-//     const ws_metadata = XLSX.utils.aoa_to_sheet(
-//       importData.originalSheetData.metadata.data
-//     );
-//     XLSX.utils.book_append_sheet(
-//       wb,
-//       ws_metadata,
-//       importData.originalSheetData.metadata.name || "Metadata"
-//     );
-//   }
-
-//   XLSX.writeFile(wb, "FBA_with_details.xlsx"); // Changed filename
-// }
-
-// export function exportBoxSummary(importData) {
-//   const wb = XLSX.utils.book_new();
-//   let boxNameId = 0;
-
-//   // Find the box name row index
-//   for (let i = 0; i < importData.mainJson.length; i++) {
-//     if (importData.mainJson[i][0] === "Name of box") {
-//       boxNameId = i;
-//       break;
-//     }
-//   }
-
-//   // Extract box details arrays
-//   const name = importData.mainJson[boxNameId];
-//   // const weight = importData.mainJson[boxNameId + 1];
-//   // const width = importData.mainJson[boxNameId + 2];
-//   // const length = importData.mainJson[boxNameId + 3];
-//   // const height = importData.mainJson[boxNameId + 4];
-
-//   // Create worksheet data array
-//   const ws_data = [["Box Summary with FNSKU Details"]];
-
-//   // Process each box
-//   for (let i = 1; i < name.length; i++) {
-//     // Skip empty boxes
-//     if (name[i] === "") continue;
-
-//     // Format box header details
-//     // const boxHeader = `${name[i]}: ${weight[i]}(lb) , ${width[i]} x ${length[i]} x ${height[i]}(inch)`;
-//     const boxHeader = `${name[i]}`;
-//     // Get FNSKU items for this box
-//     const boxItems = [];
-//     importData.mainJson.forEach((row, idx) => {
-//       // Only process rows that have FNSKU information (column 4)
-//       if (idx > 4 && row[4] !== "" && row[i] && row[i] !== "") {
-//         boxItems.push(`${row[4]} - ${row[i]}`);
-//       }
-//     });
-
-//     // Add box data to worksheet
-//     if (boxItems.length > 0) {
-//       ws_data.push([boxHeader + "|   " + boxItems.join(", ")]);
-//     } else {
-//       ws_data.push([boxHeader + "|    No items"]);
-//     }
-//   }
-
-//   // Create worksheet and add to workbook
-//   const ws = XLSX.utils.aoa_to_sheet(ws_data);
-
-//   // Set column width
-//   ws["!cols"] = [{ wch: 150 }]; // Set column width to accommodate long entries
-
-//   // Add worksheet to workbook
-//   XLSX.utils.book_append_sheet(wb, ws, "Box Summary");
-
-//   // Write file
-//   XLSX.writeFile(wb, "BoxSummary.xlsx");
-// }
 
 /**
  * Export data in Amazon format with shipmentID support
