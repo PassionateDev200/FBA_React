@@ -15,6 +15,7 @@ import BoxSummary from "./pages/BoxSummary";
 import BoxSummary0 from "./pages/BoxSummary0";
 import ShipmentsPage from "./pages/ShipmentsPage";
 import ImportSummary from "./pages/ImportSummary";
+import MultiAdd from "./pages/MultiAdd";
 import { ToastContainer } from "react-toastify";
 import { BoxProvider } from "./context/BoxContent";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -43,6 +44,7 @@ const App = () => {
                 <Route path="/boxsummary0" element={<BoxSummary0 />} />
                 <Route path="/shipments" element={<ShipmentsPage />} />
                 <Route path="/importSummary" element={<ImportSummary />} />
+                <Route path="/multiAdd" element={<MultiAdd />} />
               </Routes>
             </main>
             <Footer />

@@ -5,6 +5,7 @@ import {
   BoxSeamFill,
   FileEarmarkArrowDownFill,
   GearFill,
+  BoxSeam,
   Grid3x3GapFill,
   Wifi,
   ArrowRepeat,
@@ -94,12 +95,21 @@ const Header0 = () => {
             <li className="nav-item">
               <Link
                 className={`nav-link ${isActive("/settings") ? "active" : ""}`}
+                to="/multiAdd"
+              >
+                <BoxSeam className="nav-icon" />
+                Multi Add
+              </Link>
+            </li>
+            {/* <li className="nav-item">
+              <Link
+                className={`nav-link ${isActive("/settings") ? "active" : ""}`}
                 to="/settings"
               >
                 <GearFill className="nav-icon" />
                 Settings
               </Link>
-            </li>
+            </li> */}
           </ul>
         </div>
         {/* </div> */}

@@ -58,71 +58,6 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
 
   return (
     <div className="box-list-component">
-      {/* <div className="bg-light p-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">
-          <BoxSeamFill className="me-2" />
-          Boxes
-        </h5>
-        <Badge bg="dark" pill>
-          {filteredBoxes.length}
-        </Badge>
-      </div>
-
-      {currentBoxes.length === 0 ? (
-        <div className="text-center py-5">
-          <InboxesFill size={40} className="text-muted mb-3" />
-          <p className="text-muted">
-            No boxes available. Click "Add New Box" to get started.
-          </p>
-        </div>
-      ) : (
-        <div className="box-list">
-          {currentBoxes.map((box, index) => {
-            const originalIndex = getOriginalIndex(index);
-
-            return (
-              <div
-                key={originalIndex}
-                className={`box-item d-flex justify-content-between align-items-center p-3 border-bottom ${
-                  originalIndex === selectedBoxId ? "selected-box" : ""
-                }`}
-                onClick={() => handleSelect(originalIndex)}
-              >
-                <div className="d-flex align-items-center">
-                  <div className="box-icon me-3">
-                    <BoxFill
-                      size={20}
-                      className={
-                        originalIndex === selectedBoxId
-                          ? "text-primary"
-                          : "text-muted"
-                      }
-                    />
-                  </div>
-                  <div>
-                    <div className="fw-medium">{box}</div>
-                    <small className="text-muted">
-                      ID: BOX-{originalIndex}
-                    </small>
-                  </div>
-                </div>
-                <Button
-                  variant="light"
-                  size="sm"
-                  className="d-flex align-items-center edit-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(originalIndex, box);
-                  }}
-                >
-                  <PencilFill size={14} className="text-dark" />
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )} */}
-
       {/* Header remains the same */}
       <div className="bg-light p-3 border-bottom d-flex justify-content-between align-items-center">
         <h5 className="mb-0">
@@ -172,7 +107,7 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
                   <div>
                     <div className="fw-medium">{box}</div>
                     <small className="text-muted">
-                      ID: BOX-{originalIndex}
+                      ID: BOX-{originalIndex - 11}
                     </small>
                   </div>
                 </div>
