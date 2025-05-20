@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // Added useLocationion
 import { useBoxActions } from "../context/BoxContent";
-import BoxList from "../components/BoxList";
+import BoxList0 from "../components/BoxList0";
 import BoxContent0 from "../components/BoxContent0";
 import { getImportData, saveImportData } from "../utils/storage0"; // Changed to saveImportData
 import { Button, Modal, Card, Badge } from "react-bootstrap";
@@ -349,6 +349,88 @@ const BoxSummary0 = () => {
     return status;
   };
 
+  const handleRemoveBox = (boxIndex) => {
+    // Set confirmation message and action
+    setConfirmMessage(
+      `Are you sure you want to remove this box? All items in this box will be unboxed.`
+    );
+    setConfirmAction(() => async () => {
+      try {
+        // Get the current data
+        const data = await getImportData(shipmentID);
+        if (!data) return;
+
+        let boxNameId = 0;
+        for (let i = 0; i < data.mainJson.length; i++) {
+          if (data.mainJson[i][0] === "Name of box") {
+            boxNameId = i;
+            break;
+          }
+        }
+
+        // Store items that need to be unboxed for later reference
+        const boxedItems = [];
+        for (let i = 5; i < data.mainJson.length; i++) {
+          const qty = parseInt(data.mainJson[i][boxIndex]) || 0;
+          if (qty > 0) {
+            boxedItems.push({
+              row: i,
+              quantity: qty,
+            });
+          }
+        }
+        console.log("data.mainJson ========>", data.mainJson[boxNameId]);
+        // 1. Remove box info from box-related arrays (name, weight, etc.)
+        for (let j = 0; j <= 4; j++) {
+          // Remove the box column from box-name, weight, width, length, height rows
+          data.mainJson[boxNameId + j].splice(boxIndex, 1);
+        }
+
+        // 2. Remove column from box quantity header
+        data.mainJson[4].splice(boxIndex, 1);
+
+        // 3. Process each row with items to unbox
+        for (let i = 5; i < boxNameId; i++) {
+          // If this row had items in the removed box
+          const item = boxedItems.find((item) => item.row === i);
+          if (item) {
+            // Adjust the total boxed quantity by subtracting the quantity from this box
+            const currentBoxed = parseInt(data.mainJson[i][10]) || 0;
+            data.mainJson[i][10] = String(
+              Math.max(0, currentBoxed - item.quantity)
+            );
+          }
+
+          // Remove the box column from this row
+          data.mainJson[i].splice(boxIndex, 1);
+        }
+
+        // Save the updated data
+        await saveImportData(data, shipmentID);
+
+        // Reset selected box if it was the deleted one
+        if (selectId === boxIndex) {
+          setSelectId(0);
+        } else if (selectId > boxIndex) {
+          // Adjust selection index since we removed a box
+          setSelectId(selectId - 1);
+        }
+
+        // Reload boxes to update the UI
+        loadBoxes();
+
+        setShowConfirmModal(false);
+        toast.success("Box removed successfully. Items have been unboxed.");
+      } catch (error) {
+        console.error("Error removing box:", error);
+        toast.error("Failed to remove box. Please try again.");
+        setShowConfirmModal(false);
+      }
+    });
+
+    setShowConfirmModal(true);
+  };
+
   return (
     <div className="container mt-4">
       <Card className="shadow-sm mb-4 bg-light">
@@ -440,10 +522,11 @@ const BoxSummary0 = () => {
         <div className="col-md-4">
           <Card className="shadow-sm mb-4">
             <Card.Body className="p-3">
-              <BoxList
+              <BoxList0
                 boxes={boxes}
                 onSelect={onListClicked}
                 onEdit={handleEditBox}
+                onRemoveBox={handleRemoveBox} // Add this new prop
               />
             </Card.Body>
           </Card>
