@@ -85,10 +85,30 @@ const BoxContent0 = ({
           background: "linear-gradient(to right, #343a40, #495057)",
         }}
       >
-        <h5 className="mb-0 text-white d-flex align-items-center">
-          <BoxSeam className="me-2" />
-          {boxName || "No Box Selected"}
-        </h5>
+        <div className="d-flex flex-column">
+          <h5 className="mb-0 text-white d-flex align-items-center">
+            <BoxSeam className="me-2" />
+            {boxName || "No Box Selected"}
+          </h5>
+          {box && box.length > 0 && selectId > 0 && (
+            <div className="text-light  mt-1">
+              <Badge bg="light" text="dark" className="me-2">
+                {
+                  box.filter((item) => item.quantity && item.quantity !== "")
+                    .length
+                }{" "}
+                Items
+              </Badge>
+              <Badge bg="info" className="me-2">
+                {box.reduce((total, item) => {
+                  const qty = parseInt(item.quantity) || 0;
+                  return total + qty;
+                }, 0)}{" "}
+                Total Quantity
+              </Badge>
+            </div>
+          )}
+        </div>
         {selectId > 0 && (
           <Button
             variant="light"
@@ -100,6 +120,7 @@ const BoxContent0 = ({
           </Button>
         )}
       </Card.Header>
+
       <Card.Body>
         {selectId <= 0 ? (
           <div className="text-center py-5">
