@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // Added useLocationion
 import { useBoxActions } from "../context/BoxContent";
 import BoxList from "../components/BoxList";
-import BoxContent from "../components/BoxContent";
+import BoxContent0 from "../components/BoxContent0";
 import { getImportData, saveImportData } from "../utils/storage0"; // Changed to saveImportData
 import { Button, Modal, Card, Badge } from "react-bootstrap";
 import AddBoxForm from "../components/AddBoxForm";
@@ -182,6 +182,7 @@ const BoxSummary0 = () => {
   const calculateBox = (index) => {
     let detail = [];
     if (index > 10) {
+      const a = getImportData(shipmentID);
       getImportData(shipmentID).then(
         (
           data // Pass shipmentID
@@ -199,6 +200,7 @@ const BoxSummary0 = () => {
               })
           )
       );
+      console.log("detail", detail);
       setBoxDetail(detail);
     }
   };
@@ -310,6 +312,7 @@ const BoxSummary0 = () => {
         // Use saveImportData with shipmentID
         // Refresh the UI
         calculateBox(selectId);
+
         loadBoxes();
         setError("");
         toast.info(`Removed ${quantity} units of ${fnsku} from box`);
@@ -317,7 +320,7 @@ const BoxSummary0 = () => {
     }
   };
 
-  const addItem = (fnsku, quantity) => {
+  const addItem = async (fnsku, quantity) => {
     let status;
     if (avalible_fnsku[fnsku - 5][1] >= quantity) {
       avalible_fnsku[fnsku - 5][1] -= quantity;
@@ -332,7 +335,7 @@ const BoxSummary0 = () => {
           parseInt(importData.mainJson[fnsku][selectId]) + quantity + "";
       }
 
-      saveImportData(importData, shipmentID); // Use saveImportData with shipmentID
+      await saveImportData(importData, shipmentID); // Use saveImportData with shipmentID
       calculateBox(selectId);
       loadBoxes();
       setError("");
@@ -448,7 +451,7 @@ const BoxSummary0 = () => {
 
         {/* Box Content Area */}
         <div className="col-md-8">
-          <BoxContent
+          <BoxContent0
             addItem={addItem}
             box={boxDetail}
             boxName={boxes[selectId]}
