@@ -321,6 +321,7 @@ const BoxSummary0 = () => {
   };
 
   const addItem = async (fnsku, quantity) => {
+    console.log("summary  ===> addItem  ===>", fnsku, quantity);
     let status;
     if (avalible_fnsku[fnsku - 5][1] >= quantity) {
       avalible_fnsku[fnsku - 5][1] -= quantity;
@@ -552,6 +553,7 @@ const BoxSummary0 = () => {
             error={error}
             selectId={selectId}
             removeFNSKU={removeFNSKU}
+            importData={importData}
           />
         </div>
       </div>

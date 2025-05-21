@@ -29,6 +29,7 @@ const BoxContent0 = ({
   error,
   selectId,
   removeFNSKU,
+  importData,
 }) => {
   const [showModal, setShowModal] = useState(false);
   // State for form data
@@ -45,6 +46,8 @@ const BoxContent0 = ({
     setShowModal(true);
   };
 
+  console.log("availablefnskus  =======> ", availablefnskus);
+  console.log("box  =======> ", box);
   // Handle closing the modal
   const handleCloseModal = () => {
     setShowModal(false);
@@ -69,13 +72,36 @@ const BoxContent0 = ({
 
   // Handle form submission
   const handleSubmit = () => {
-    // Call the parent component's add item function
-    let status = addItem(formData.fnsku, parseInt(formData.quantity));
-    if (status) {
-      handleCloseModal();
+    // Find the correct index for the entered FNSKU
+    let fnskuIndex = null;
+
+    // Search through availablefnskus to find the matching row index
+    for (const fnsku of availablefnskus) {
+      const fnskuRow = fnsku[0];
+      const matchingFnskuValue = importData.mainJson[fnskuRow][4];
+
+      // If we find a match, use that row's index
+      if (matchingFnskuValue === formData.fnsku) {
+        fnskuIndex = fnskuRow;
+        break;
+      }
     }
-    // Close the modal
+
+    // Only proceed if we found a valid index
+    if (fnskuIndex !== null) {
+      // Call the parent component's add item function with the correct index
+      let status = addItem(fnskuIndex, parseInt(formData.quantity));
+      if (status) {
+        handleCloseModal();
+      }
+    } else {
+      // Handle the case where no matching FNSKU was found
+      console.error("No matching FNSKU found");
+      // You could also set an error state here
+    }
   };
+
+  console.log("formData   =====>    ", formData);
 
   return (
     <Card className="shadow-sm mb-4 h-100">
@@ -208,22 +234,86 @@ const BoxContent0 = ({
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>
-                <Upc className="me-2" /> Choose FNSKU
+                <Upc className="me-2" /> Enter FNSKU
               </Form.Label>
-              <Form.Select
-                name="fnsku"
+              <Form.Control
+                type="text"
+                placeholder="Enter FNSKU (e.g., X004B0UKXN)"
                 value={formData.fnsku}
-                onChange={handleInputChange}
-                className="text-black"
-              >
-                <option value="">Select FNSKU</option>
-                {box.map((detail, index) => (
-                  <option key={index} value={index + 5} className="text-black">
-                    {detail.fnsku}
-                  </option>
-                ))}
-              </Form.Select>
+                onChange={(e) => {
+                  const enteredFnsku = e.target.value;
+                  setFormData({
+                    ...formData,
+                    fnsku: enteredFnsku,
+                  });
+                }}
+              />
             </Form.Group>
+
+            {formData.fnsku && (
+              <>
+                {availablefnskus.some((fnsku) => {
+                  const fnskuRow = fnsku[0];
+                  const availableQty = fnsku[1];
+                  const matchingFnskuValue = importData.mainJson[fnskuRow][4];
+
+                  if (matchingFnskuValue === formData.fnsku) {
+                    return true;
+                  }
+                  return false;
+                }) ? (
+                  availablefnskus.map((fnsku, index) => {
+                    const fnskuRow = fnsku[0];
+                    const availableQty = fnsku[1];
+                    const matchingFnskuValue = importData.mainJson[fnskuRow][4];
+
+                    if (matchingFnskuValue === formData.fnsku) {
+                      const row = importData.mainJson[fnskuRow];
+                      const expectedQty = parseInt(row[9] || "0");
+                      const boxedQty = parseInt(row[10] || "0");
+
+                      return (
+                        <div key={index} className="alert alert-info mb-3">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <strong>FNSKU: {matchingFnskuValue}</strong>
+                            <strong>Available: {availableQty}</strong>
+                          </div>
+                          <div>
+                            <strong>Title:</strong> {row[1]}
+                          </div>
+                          <div>
+                            <strong>SKU:</strong> {row[0]}
+                          </div>
+                          <div>
+                            <strong>ASIN:</strong> {row[3]}
+                          </div>
+                          <div className="d-flex justify-content-between mt-2">
+                            <div>
+                              <strong>Expected:</strong> {expectedQty}
+                            </div>
+                            <div>
+                              <strong>Scanned:</strong> {boxedQty}
+                            </div>
+                          </div>
+                          <input
+                            type="hidden"
+                            name="fnsku"
+                            value={fnskuRow}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      );
+                    }
+                    return null;
+                  })
+                ) : (
+                  <div className="alert alert-warning">
+                    <InfoCircleFill className="me-2" />
+                    No matching FNSKU found. Please enter a valid FNSKU.
+                  </div>
+                )}
+              </>
+            )}
 
             <Form.Group className="mb-3">
               <Form.Label>
@@ -237,13 +327,6 @@ const BoxContent0 = ({
                 min="1"
               />
             </Form.Group>
-
-            {formData.fnsku !== "" && (
-              <div className="alert alert-info">
-                <InfoCircleFill className="me-2" /> Available:{" "}
-                {availablefnskus[formData.fnsku - 5][1]} units
-              </div>
-            )}
 
             {error && <div className="alert alert-danger">{error}</div>}
           </Form>

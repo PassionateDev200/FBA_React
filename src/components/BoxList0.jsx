@@ -26,7 +26,7 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
 
   // Calculate total number of pages
   const totalPages = Math.ceil(filteredBoxes.length / itemsPerPage);
-  console.log("boxes ===>", boxes);
+
   // Update total pages when it changes
   useEffect(() => {
     setTotalPages(totalPages);

@@ -44,7 +44,7 @@ const EditBoxForm = ({ box, onSubmit, onCancel }) => {
       if (weightMatch) {
         setBoxData((prev) => ({
           ...prev,
-          weight: weightMatch[1],
+          weight: weightMatch[1], //
         }));
       }
 

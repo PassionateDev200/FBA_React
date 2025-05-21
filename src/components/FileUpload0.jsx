@@ -90,9 +90,13 @@ const FileUpload0 = () => {
         .substring(2, 8)
         .toUpperCase()}`;
 
+      const shipmentName = shipmentID;
+
+      console.log("shipmentName ===> ", shipmentName);
       // Add the shipmentID to the data object
       data.shipmentID = shipmentID;
-
+      data.shipmentName = shipmentName;
+      console.log("data ===>", data);
       // Update progress
       clearInterval(progressInterval);
       setLoadingProgress(100);
