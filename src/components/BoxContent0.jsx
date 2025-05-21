@@ -46,8 +46,6 @@ const BoxContent0 = ({
     setShowModal(true);
   };
 
-  console.log("availablefnskus  =======> ", availablefnskus);
-  console.log("box  =======> ", box);
   // Handle closing the modal
   const handleCloseModal = () => {
     setShowModal(false);
@@ -100,8 +98,6 @@ const BoxContent0 = ({
       // You could also set an error state here
     }
   };
-
-  console.log("formData   =====>    ", formData);
 
   return (
     <Card className="shadow-sm mb-4 h-100">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react"; // Added useMemo for performance
+import { useBoxActions } from "../context/TotalContent";
 import { getImportData, saveImportData } from "../utils/storage0"; // Changed to storage0
 import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import ValidationAlerts from "../components/ValidationAlerts";
@@ -32,7 +33,7 @@ function ProductDetail() {
   const navigate = useNavigate();
   const location = useLocation(); // Get location for shipmentID
   const shipmentID = location.state?.shipmentID; // Get shipmentID from route state
-
+  const { setTotals } = useBoxActions(); // Add this to access context actions
   // Modal states
   const [showAddEditModal, setShowAddEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -108,7 +109,7 @@ function ProductDetail() {
       return isNaN(parsed) ? 0 : parsed;
     };
 
-    return importData.mainJson.reduce(
+    const calculatedTotals = importData.mainJson.reduce(
       (acc, item) => {
         if (item[4] !== "") {
           acc.expected += safeParseInt(item[9]);
@@ -119,7 +120,12 @@ function ProductDetail() {
       },
       { expected: 0, boxed: 0, num: 0 }
     );
-  }, [importData]);
+
+    // Update context with the calculated totals
+    setTotals(calculatedTotals);
+
+    return calculatedTotals;
+  }, [importData, setTotals]);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -207,63 +213,7 @@ function ProductDetail() {
   };
 
   // Save product (add or update)
-  // const handleFormSubmit = async () => {
-  //   console.log("importData--old ====>", importData);
-  //   let insertPlace = 0;
-
-  //   for (let i = 0; i < importData.mainJson.length; i++) {
-  //     if (importData.mainJson[i][0] === "Name of box") {
-  //       insertPlace = i;
-  //     }
-  //   }
-  //   try {
-  //     const newData = { ...importData };
-
-  //     console.log("insertPlace--old ====>", insertPlace);
-
-  //     if (isEditing) {
-  //       // Update existing product
-  //       newData.mainJson[currentIndex][0] = formData.sku;
-  //       newData.mainJson[currentIndex][1] = formData.product_title;
-  //       newData.mainJson[currentIndex][2] = formData.Id;
-  //       newData.mainJson[currentIndex][3] = formData.ASIN;
-  //       newData.mainJson[currentIndex][4] = formData.FNSKU;
-  //       newData.mainJson[currentIndex][5] = formData.condition;
-  //       newData.mainJson[currentIndex][6] = formData.prep_type;
-  //       newData.mainJson[currentIndex][7] = formData.preps_units;
-  //       newData.mainJson[currentIndex][8] = formData.labels_units;
-  //       newData.mainJson[currentIndex][9] = formData.expected_quantity;
-
-  //       toast.success("Product updated successfully!");
-  //     } else {
-  //       // Add new product
-  //       const newRow = [
-  //         formData.sku,
-  //         formData.product_title,
-  //         formData.Id,
-  //         formData.ASIN,
-  //         formData.FNSKU,
-  //         formData.condition,
-  //         formData.prep_type,
-  //         formData.preps_units,
-  //         formData.labels_units,
-  //         formData.expected_quantity,
-  //         "0", // Initialize boxed quantity as column 10
-  //       ];
-
-  //       newData.mainJson.push(newRow);
-  //       toast.success("Product added successfully!");
-  //     }
-  //     setImportData(newData);
-  //     await saveImportData(newData, shipmentID); // Pass shipmentID to update lastModifiedDate
-  //     setShowAddEditModal(false);
-  //   } catch (error) {
-  //     console.error("Error saving product:", error);
-  //     toast.error("Failed to save product. Please try again.");
-  //   }
-  // };
   const handleFormSubmit = async () => {
-    console.log("importData--old ====>", importData);
     let insertPlace = 0;
     for (let i = 0; i < importData.mainJson.length; i++) {
       if (importData.mainJson[i][0] === "Name of box") {
@@ -274,8 +224,6 @@ function ProductDetail() {
 
     try {
       const newData = { ...importData };
-
-      console.log("insertPlace--old ====>", insertPlace);
 
       if (isEditing) {
         // Update existing product

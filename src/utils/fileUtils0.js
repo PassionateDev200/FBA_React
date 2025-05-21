@@ -40,7 +40,6 @@ export async function parseExcelFile(file) {
         });
         let mainJson = [];
         let length = 0;
-        console.log("json", json[4]);
         for (let i in json[4]) {
           if ((json[4][i] === "" || json[4][12] === 0) && i > 11) {
             length = i;

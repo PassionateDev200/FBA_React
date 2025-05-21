@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom"; // Added useLocationion
-import { useBoxActions } from "../context/BoxContent";
+import { useBoxActions, useBoxState } from "../context/TotalContent";
 import BoxList0 from "../components/BoxList0";
 import BoxContent0 from "../components/BoxContent0";
 import { getImportData, saveImportData } from "../utils/storage0"; // Changed to saveImportData
@@ -22,7 +22,8 @@ import {
 import { toast } from "react-toastify";
 
 const BoxSummary0 = () => {
-  const { setSelectedBox } = useBoxActions();
+  const { setSelectedBox, setTotals } = useBoxActions();
+  const { totals } = useBoxState(); // Access totals from context
   const location = useLocation(); // Get location for shipmentID
   const shipmentID = location.state?.shipmentID; // Get shipmentID from route state
 
@@ -124,6 +125,7 @@ const BoxSummary0 = () => {
       let boxArray = [];
       let boxNameId = 0;
       setImportData(data);
+      calculateTotals(data);
       let fnsku = [];
 
       for (let i = 0; i < data.mainJson.length; i++) {
@@ -174,6 +176,37 @@ const BoxSummary0 = () => {
     });
   };
 
+  // Add this function to BoxSummary0.jsx
+  const calculateTotals = (data) => {
+    if (!data || !data.mainJson) return;
+
+    // Safe parsing function
+    const safeParseInt = (value) => {
+      if (value === undefined || value === null || value === "") return 0;
+      const parsed = parseInt(value, 10);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
+    // Calculate totals
+    const calculatedTotals = {
+      num: 0,
+      expected: 0,
+      boxed: 0,
+    };
+
+    for (let i = 5; i < data.mainJson.length; i++) {
+      const item = data.mainJson[i];
+      if (item && item[4] !== "") {
+        calculatedTotals.num++;
+        calculatedTotals.expected += safeParseInt(item[9]);
+        calculatedTotals.boxed += safeParseInt(item[10]);
+      }
+    }
+
+    // Update context with the calculated totals
+    setTotals(calculatedTotals);
+  };
+
   const onListClicked = useCallback((index) => {
     setSelectId(index);
     calculateBox(index);
@@ -200,7 +233,6 @@ const BoxSummary0 = () => {
               })
           )
       );
-      console.log("detail", detail);
       setBoxDetail(detail);
     }
   };
@@ -233,8 +265,8 @@ const BoxSummary0 = () => {
         }
       }
 
-      let current_length = data.mainJson[4].length - 11;
-      data.mainJson[4].push(`Box ${current_length} quantity`);
+      let boxNum = boxData.boxName.charAt(boxData.boxName.length - 1);
+      data.mainJson[4].push(`Box ${boxNum} quantity`);
       for (let i = 5; i < boxNameId - 1; i++) {
         data.mainJson[i].push("");
       }
@@ -263,6 +295,40 @@ const BoxSummary0 = () => {
         }, 100);
       });
     });
+  };
+
+  const addItem = async (fnsku, quantity) => {
+    let status;
+    if (avalible_fnsku[fnsku - 5][1] >= quantity) {
+      avalible_fnsku[fnsku - 5][1] -= quantity;
+      importData.mainJson[fnsku][10] =
+        parseInt(importData.mainJson[fnsku][10]) + quantity + "";
+
+      // mounted books
+      if (importData.mainJson[fnsku][selectId] === "") {
+        importData.mainJson[fnsku][selectId] = quantity + "";
+      } else {
+        importData.mainJson[fnsku][selectId] =
+          parseInt(importData.mainJson[fnsku][selectId]) + quantity + "";
+      }
+
+      await saveImportData(importData, shipmentID); // Use saveImportData with shipmentID
+      calculateBox(selectId);
+      loadBoxes();
+      setError("");
+      status = true;
+      toast.success(`Added ${quantity} units to box successfully!`);
+    } else {
+      setError("Exceed the maximum quantity");
+      toast.error("Cannot add items: Exceeds available quantity");
+      status = false;
+    }
+
+    if (status) {
+      // Recalculate totals after item is added
+      calculateTotals(importData);
+    }
+    return status;
   };
 
   const removeFNSKU = (fnsku, quantity) => {
@@ -315,39 +381,11 @@ const BoxSummary0 = () => {
 
         loadBoxes();
         setError("");
+        // Add this line to recalculate totals
+        calculateTotals(importData);
         toast.info(`Removed ${quantity} units of ${fnsku} from box`);
       });
     }
-  };
-
-  const addItem = async (fnsku, quantity) => {
-    console.log("summary  ===> addItem  ===>", fnsku, quantity);
-    let status;
-    if (avalible_fnsku[fnsku - 5][1] >= quantity) {
-      avalible_fnsku[fnsku - 5][1] -= quantity;
-      importData.mainJson[fnsku][10] =
-        parseInt(importData.mainJson[fnsku][10]) + quantity + "";
-
-      // mounted books
-      if (importData.mainJson[fnsku][selectId] === "") {
-        importData.mainJson[fnsku][selectId] = quantity + "";
-      } else {
-        importData.mainJson[fnsku][selectId] =
-          parseInt(importData.mainJson[fnsku][selectId]) + quantity + "";
-      }
-
-      await saveImportData(importData, shipmentID); // Use saveImportData with shipmentID
-      calculateBox(selectId);
-      loadBoxes();
-      setError("");
-      status = true;
-      toast.success(`Added ${quantity} units to box successfully!`);
-    } else {
-      setError("Exceed the maximum quantity");
-      toast.error("Cannot add items: Exceeds available quantity");
-      status = false;
-    }
-    return status;
   };
 
   const handleRemoveBox = (boxIndex) => {
@@ -416,6 +454,8 @@ const BoxSummary0 = () => {
 
         // Save the updated data
         await saveImportData(data, shipmentID);
+        // Add this line to recalculate totals
+        calculateTotals(data);
 
         // Reset selected box if it was the deleted one
         if (selectId === boxIndex) {
@@ -525,6 +565,44 @@ const BoxSummary0 = () => {
             </div>
           </div>
         </div>
+      </Card>
+
+      {/* Added Summary Card - New feature */}
+      <Card className="shadow-sm mb-4 bg-light">
+        <Card.Body>
+          <div className="row">
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <div className="me-3">
+                  <span className="fs-5 fw-bold">{totals.num}</span>
+                </div>
+                <div>
+                  <span className="text-muted">Total Products</span>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <div className="me-3">
+                  <span className="fs-5 fw-bold">{totals.expected}</span>
+                </div>
+                <div>
+                  <span className="text-muted">Expected Quantity</span>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="d-flex align-items-center">
+                <div className="me-3">
+                  <span className="fs-5 fw-bold">{totals.boxed}</span>
+                </div>
+                <div>
+                  <span className="text-muted">Boxed Quantity</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card.Body>
       </Card>
 
       {/* Main Content Area */}

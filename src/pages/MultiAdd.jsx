@@ -129,7 +129,6 @@ const MultiAdd = () => {
       }
     }
 
-    console.log("getAvailableBoxes ==>", { boxDetails, boxNumbers });
     return { boxDetails, boxNumbers };
   };
 

@@ -8,7 +8,7 @@ import {
   ChevronRight,
   InboxesFill,
 } from "react-bootstrap-icons";
-import { useBoxState, useBoxActions } from "../context/BoxContent";
+import { useBoxState, useBoxActions } from "../context/TotalContent";
 
 const BoxList = ({ boxes, onEdit, onSelect }) => {
   // Get state and actions from context

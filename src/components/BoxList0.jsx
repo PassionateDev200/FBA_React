@@ -9,7 +9,7 @@ import {
   InboxesFill,
   TrashFill, // Add this import
 } from "react-bootstrap-icons";
-import { useBoxState, useBoxActions } from "../context/BoxContent";
+import { useBoxState, useBoxActions } from "../context/TotalContent";
 
 const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
   // Get state and actions from context

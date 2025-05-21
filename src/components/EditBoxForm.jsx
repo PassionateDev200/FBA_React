@@ -23,8 +23,6 @@ const EditBoxForm = ({ box, onSubmit, onCancel }) => {
 
     // Extract data from the box string if available
     if (box) {
-      console.log("EditBoxForm ===>", box);
-
       // Get box name independently - covers both formats
       // This will match everything before the colon
       const nameMatch = box.match(/^(.*?):/);

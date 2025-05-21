@@ -3,14 +3,16 @@ import React, {
   useContext,
   useReducer,
   useCallback,
+  useEffect,
 } from "react";
 
-// Initial state
+// Initial state with totals added
 const initialState = {
   currentPage: 1,
   selectedBoxId: null,
   totalPages: 1,
   itemsPerPage: 5,
+  totals: { num: 0, expected: 0, boxed: 0 },
 };
 
 // Create context
@@ -25,6 +27,10 @@ function boxReducer(state, action) {
       return { ...state, selectedBoxId: action.payload };
     case "SET_TOTAL_PAGES":
       return { ...state, totalPages: action.payload };
+    case "SET_TOTALS":
+      // Save to localStorage when totals change
+      localStorage.setItem("boxTotals", JSON.stringify(action.payload));
+      return { ...state, totals: action.payload };
     default:
       return state;
   }
@@ -32,7 +38,24 @@ function boxReducer(state, action) {
 
 // Provider component
 export function BoxProvider({ children }) {
-  const [state, dispatch] = useReducer(boxReducer, initialState);
+  // Load initial state from localStorage
+  const loadInitialState = () => {
+    try {
+      const savedTotals = localStorage.getItem("boxTotals");
+      if (savedTotals) {
+        const parsedTotals = JSON.parse(savedTotals);
+        return {
+          ...initialState,
+          totals: parsedTotals,
+        };
+      }
+    } catch (error) {
+      console.error("Error loading saved totals:", error);
+    }
+    return initialState;
+  };
+
+  const [state, dispatch] = useReducer(boxReducer, loadInitialState());
 
   // Actions
   const setCurrentPage = useCallback((page) => {
@@ -59,13 +82,19 @@ export function BoxProvider({ children }) {
     dispatch({ type: "SET_TOTAL_PAGES", payload: pages });
   }, []);
 
-  // Value object
+  // Add new action for totals
+  const setTotals = useCallback((totals) => {
+    dispatch({ type: "SET_TOTALS", payload: totals });
+  }, []);
+
+  // Value object - add setTotals
   const value = {
     state,
     actions: {
       setCurrentPage,
       setSelectedBox,
       setTotalPages,
+      setTotals,
     },
   };
 

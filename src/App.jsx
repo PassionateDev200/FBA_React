@@ -17,7 +17,7 @@ import ShipmentsPage from "./pages/ShipmentsPage";
 import ImportSummary from "./pages/ImportSummary";
 import MultiAdd from "./pages/MultiAdd";
 import { ToastContainer } from "react-toastify";
-import { BoxProvider } from "./context/BoxContent";
+import { BoxProvider } from "./context/TotalContent";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
