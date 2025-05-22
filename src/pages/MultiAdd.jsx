@@ -331,6 +331,33 @@ const MultiAdd = () => {
   // UI rendering
   return (
     <Container className="py-4">
+      {/* Buttons */}
+      <div className="d-flex justify-content-between mb-4">
+        {/* Left-aligned Previous button */}
+        <div>
+          <Button
+            variant="outline-dark"
+            onClick={() => navigate(-1)}
+            disabled={isLoading}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-arrow-left me-2"></i> Previous
+          </Button>
+        </div>
+
+        {/* Right-aligned action buttons */}
+        <div>
+          <Button
+            variant="outline-primary"
+            className="me-2"
+            onClick={() => navigate("/boxsummary0", { state: { shipmentID } })}
+            disabled={isLoading}
+          >
+            <BoxSeamFill className="me-2" /> BoxSummary
+          </Button>
+        </div>
+      </div>
+
       <Card className="shadow-sm">
         <Card.Header className="bg-dark text-white">
           <h4 className="mb-0 d-flex align-items-center">
