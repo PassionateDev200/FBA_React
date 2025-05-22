@@ -230,7 +230,7 @@ const BoxSummary0 = () => {
       getImportData(shipmentID).then(
         (
           data // Pass shipmentID
-        ) =>
+        ) => {
           data.mainJson.map(
             (data, idx) =>
               idx > 4 &&
@@ -242,21 +242,16 @@ const BoxSummary0 = () => {
                 asin: data[3],
                 sku: data[0],
               })
-          )
+          );
+          setBoxDetail(detail);
+        }
       );
-      setBoxDetail(detail);
     }
   };
 
   // Handle opening the add box modal
   const handleAddBox = () => {
     setShowAddModal(true);
-  };
-
-  // Handle the add box form submission
-  const handleAddBoxSubmit = (boxData) => {
-    addBoxToData(boxData);
-    setShowAddModal(false);
   };
 
   // Add the box data to storage
@@ -335,6 +330,128 @@ const BoxSummary0 = () => {
       calculateTotals(importData);
     }
     return status;
+  };
+
+  const reduceItem = async (fnsku, difference) => {
+    let status = false;
+
+    // Get current quantity in this box
+    const currentInBox = parseInt(importData.mainJson[fnsku][selectId]) || 0;
+
+    // Check if we can reduce the requested amount
+    if (currentInBox >= difference && difference > 0) {
+      // Increase available quantity (return items to available pool)
+      avalible_fnsku[fnsku - 5][1] += difference;
+
+      // Decrease total boxed quantity
+      const currentBoxedTotal = parseInt(importData.mainJson[fnsku][10]) || 0;
+      importData.mainJson[fnsku][10] =
+        Math.max(0, currentBoxedTotal - difference) + "";
+
+      // Reduce from current box
+      const newBoxQuantity = currentInBox - difference;
+      if (newBoxQuantity === 0) {
+        importData.mainJson[fnsku][selectId] = "";
+      } else {
+        importData.mainJson[fnsku][selectId] = newBoxQuantity + "";
+      }
+
+      // Save the updated data
+      await saveImportData(importData, shipmentID);
+
+      // Update UI
+      calculateBox(selectId);
+      loadBoxes();
+      setError("");
+      status = true;
+
+      toast.success(`Reduced ${difference} units from box successfully!`);
+    } else if (difference <= 0) {
+      setError("Reduction amount must be greater than 0");
+      toast.error("Reduction amount must be greater than 0");
+      status = false;
+    } else {
+      setError(
+        `Cannot reduce ${difference} units. Only ${currentInBox} units available in this box`
+      );
+      toast.error(
+        `Cannot reduce ${difference} units. Only ${currentInBox} units available in this box`
+      );
+      status = false;
+    }
+
+    if (status) {
+      // Recalculate totals after item is reduced
+      calculateTotals(importData);
+    }
+
+    return status;
+  };
+
+  // Handle the add box form submission - UPDATED
+  const handleAddBoxSubmit = (submissionData) => {
+    if (submissionData.multipleBoxes) {
+      // Handle multiple boxes
+      addMultipleBoxesToData(submissionData.multipleBoxes);
+    } else {
+      // Handle single box
+      addBoxToData(submissionData);
+    }
+    setShowAddModal(false);
+  };
+
+  // Add multiple boxes to data - NEW FUNCTION
+  const addMultipleBoxesToData = async (boxesArray) => {
+    try {
+      const data = await getImportData(shipmentID);
+      if (!data) return;
+
+      let boxNameId = 0;
+      for (let i = 0; i < data.mainJson.length; i++) {
+        if (data.mainJson[i][0] === "Name of box") {
+          boxNameId = i;
+          break;
+        }
+      }
+
+      // Add all boxes
+      boxesArray.forEach((boxData, index) => {
+        const boxNumber = boxData.boxName.match(/B(\d+)$/)[1];
+
+        // Add column header for quantity tracking
+        data.mainJson[4].push(`Box ${boxNumber} quantity`);
+
+        // Add empty cells for existing items
+        for (let i = 5; i < boxNameId; i++) {
+          data.mainJson[i].push("");
+        }
+
+        // Add box details
+        data.mainJson[boxNameId].push(boxData.boxName);
+        data.mainJson[boxNameId + 1].push(boxData.weight);
+        data.mainJson[boxNameId + 2].push(boxData.width);
+        data.mainJson[boxNameId + 3].push(boxData.length);
+        data.mainJson[boxNameId + 4].push(boxData.height);
+      });
+
+      // Save updated data
+      await saveImportData(data, shipmentID);
+
+      // Reload boxes to show the updated list
+      loadBoxes();
+
+      // Select the first new box
+      const firstNewBoxIndex =
+        data.mainJson[boxNameId].length - boxesArray.length;
+      setTimeout(() => {
+        setSelectedBox(firstNewBoxIndex);
+        onListClicked(firstNewBoxIndex);
+        toast.success(`${boxesArray.length} boxes added successfully!`);
+      }, 100);
+    } catch (error) {
+      console.error("Error adding multiple boxes:", error);
+      toast.error("Failed to add boxes. Please try again.");
+    }
   };
 
   // Add this function to calculate quantities for all boxes
@@ -683,6 +800,7 @@ const BoxSummary0 = () => {
         <div className="col-md-8">
           <BoxContent0
             addItem={addItem}
+            reduceItem={reduceItem}
             box={boxDetail}
             boxName={boxes[selectId]}
             availablefnskus={avalible_fnsku}
@@ -695,6 +813,7 @@ const BoxSummary0 = () => {
       </div>
 
       {/* Enhanced Add Box Modal */}
+      {/* Add Box Modal - UPDATED */}
       <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
         <Modal.Header
           closeButton
@@ -713,7 +832,7 @@ const BoxSummary0 = () => {
           <AddBoxForm
             onSubmit={handleAddBoxSubmit}
             onCancel={() => setShowAddModal(false)}
-            shipmentID={shipmentID}
+            shipmentID={shipmentID} // Add this prop
           />
         </Modal.Body>
       </Modal>

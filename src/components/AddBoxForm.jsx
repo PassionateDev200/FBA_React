@@ -1,7 +1,8 @@
 // AddBoxForm.jsx
 import React, { useEffect, useState } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Alert, Badge } from "react-bootstrap";
 import { getImportData } from "../utils/storage0";
+import { Check2Circle } from "react-bootstrap-icons";
 
 const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
   const [boxData, setBoxData] = useState({
@@ -12,26 +13,14 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
     height: "",
   });
 
-  // const newBoxData = () => {
-  //   getImportData(shipmentID).then((data) => {
-  //     // if (!data) return;
+  const [multiBoxData, setMultiBoxData] = useState({
+    isMultiBox: false,
+    boxCount: 1,
+  });
 
-  //     let boxNameId = 0;
-  //     for (let i = 0; i < data.mainJson.length; i++) {
-  //       if (data.mainJson[i][0] === "Name of box") {
-  //         boxNameId = i;
-  //         break;
-  //       }
-  //     }
+  const [nextBoxNumber, setNextBoxNumber] = useState(1);
+  const [previewBoxes, setPreviewBoxes] = useState([]);
 
-  //     let current_length = data.mainJson[4].length - 11;
-
-  //     setBoxData((prev) => ({
-  //       ...prev,
-  //       boxName: `P1 - B${current_length}`,
-  //     }));
-  //   });
-  // };
   const newBoxData = () => {
     getImportData(shipmentID).then((data) => {
       if (!data || !data.mainJson) {
@@ -40,6 +29,7 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
           ...prev,
           boxName: "P1 - B1",
         }));
+        setNextBoxNumber(1);
         return;
       }
 
@@ -58,6 +48,7 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
           ...prev,
           boxName: "P1 - B1",
         }));
+        setNextBoxNumber(1);
         return;
       }
 
@@ -79,19 +70,33 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
         boxNumbers.length > 0 ? Math.max(...boxNumbers) : 0;
 
       // Increment by 1 for the new box name
-      const nextBoxNumber = highestBoxNumber + 1;
+      const nextNumber = highestBoxNumber + 1;
+      setNextBoxNumber(nextNumber);
 
       // Set the new box name
       setBoxData((prev) => ({
         ...prev,
-        boxName: `P1 - B${nextBoxNumber}`,
+        boxName: `P1 - B${nextNumber}`,
       }));
     });
   };
 
   useEffect(() => {
     newBoxData();
-  }, []);
+  }, [shipmentID]);
+
+  // Update preview boxes when multiBoxData changes
+  useEffect(() => {
+    if (multiBoxData.isMultiBox && multiBoxData.boxCount > 0) {
+      const boxes = [];
+      for (let i = 0; i < multiBoxData.boxCount; i++) {
+        boxes.push(`P1 - B${nextBoxNumber + i}`);
+      }
+      setPreviewBoxes(boxes);
+    } else {
+      setPreviewBoxes([]);
+    }
+  }, [multiBoxData, nextBoxNumber]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -101,75 +106,176 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
     }));
   };
 
+  const handleMultiBoxChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setMultiBoxData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : parseInt(value) || 1,
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(boxData);
+
+    if (multiBoxData.isMultiBox) {
+      // Create multiple boxes
+      const boxesToCreate = [];
+      for (let i = 0; i < multiBoxData.boxCount; i++) {
+        boxesToCreate.push({
+          boxName: `P1 - B${nextBoxNumber + i}`,
+          weight: boxData.weight,
+          width: boxData.width,
+          length: boxData.length,
+          height: boxData.height,
+        });
+      }
+      onSubmit({ multipleBoxes: boxesToCreate });
+    } else {
+      // Create single box
+      onSubmit(boxData);
+    }
   };
 
   return (
     <Form onSubmit={handleSubmit}>
+      {/* Multi-Box Checkbox */}
       <Form.Group className="mb-3">
-        <Form.Label>Name</Form.Label>
-        <Form.Control
-          type="string"
-          name="boxname"
-          value={boxData.boxName}
-          onChange={handleChange}
-          required
+        <Form.Check
+          type="checkbox"
+          id="add-multiple-boxes"
+          name="isMultiBox"
+          label="Add Multiple Boxes"
+          checked={multiBoxData.isMultiBox}
+          onChange={handleMultiBoxChange}
         />
       </Form.Group>
-      {/*
+
+      {/* Number of Boxes Input (shown when multi-box is enabled) */}
+      {multiBoxData.isMultiBox && (
+        <Form.Group className="mb-3">
+          <Form.Label>Number of Boxes</Form.Label>
+          <Form.Control
+            type="number"
+            name="boxCount"
+            value={multiBoxData.boxCount}
+            onChange={handleMultiBoxChange}
+            min="1"
+            max="50"
+          />
+          <Form.Text className="text-muted">
+            Enter the number of boxes you want to add (1-50)
+          </Form.Text>
+        </Form.Group>
+      )}
+
+      {/* Preview of boxes to be created */}
+      {previewBoxes.length > 0 && (
+        <Alert variant="info" className="mb-3">
+          <div className="d-flex align-items-center mb-2">
+            <Check2Circle className="me-2" />
+            <strong>Will create {previewBoxes.length} boxes:</strong>
+          </div>
+          <div className="d-flex flex-wrap gap-1">
+            {previewBoxes.map((boxName, index) => (
+              <Badge bg="secondary" key={index} className="me-1 mb-1">
+                {boxName}
+              </Badge>
+            ))}
+          </div>
+        </Alert>
+      )}
+
+      {/* Box Name (disabled when multi-box is enabled) */}
       <Form.Group className="mb-3">
+        <Form.Label>Box Name</Form.Label>
+        <Form.Control
+          type="text"
+          name="boxName"
+          value={
+            multiBoxData.isMultiBox ? `P1 - B${nextBoxNumber}` : boxData.boxName
+          }
+          onChange={handleChange}
+          disabled={multiBoxData.isMultiBox}
+        />
+        {multiBoxData.isMultiBox && (
+          <Form.Text className="text-muted">
+            Starting box name (others will be numbered sequentially)
+          </Form.Text>
+        )}
+      </Form.Group>
+
+      {/* Weight */}
+      {/* <Form.Group className="mb-3">
         <Form.Label>Weight (lb)</Form.Label>
         <Form.Control
           type="number"
           name="weight"
           value={boxData.weight}
           onChange={handleChange}
-          required
+          step="0.1"
         />
-      </Form.Group>
+        {multiBoxData.isMultiBox && (
+          <Form.Text className="text-muted">
+            This weight will be applied to all boxes
+          </Form.Text>
+        )}
+      </Form.Group> */}
 
-      <Form.Group className="mb-3">
-        <Form.Label>Width (inch)</Form.Label>
-        <Form.Control
-          type="number"
-          name="width"
-          value={boxData.width}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
+      {/* Dimensions */}
+      {/* <div className="row">
+        <div className="col-md-4">
+          <Form.Group className="mb-3">
+            <Form.Label>Width (inch)</Form.Label>
+            <Form.Control
+              type="number"
+              name="width"
+              value={boxData.width}
+              onChange={handleChange}
+              step="0.1"
+            />
+          </Form.Group>
+        </div>
+        <div className="col-md-4">
+          <Form.Group className="mb-3">
+            <Form.Label>Length (inch)</Form.Label>
+            <Form.Control
+              type="number"
+              name="length"
+              value={boxData.length}
+              onChange={handleChange}
+              step="0.1"
+            />
+          </Form.Group>
+        </div>
+        <div className="col-md-4">
+          <Form.Group className="mb-3">
+            <Form.Label>Height (inch)</Form.Label>
+            <Form.Control
+              type="number"
+              name="height"
+              value={boxData.height}
+              onChange={handleChange}
+              step="0.1"
+            />
+          </Form.Group>
+        </div>
+      </div> */}
 
-      <Form.Group className="mb-3">
-        <Form.Label>Length (inch)</Form.Label>
-        <Form.Control
-          type="number"
-          name="length"
-          value={boxData.length}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
+      {multiBoxData.isMultiBox && (
+        <Form.Text className="text-muted mb-3 d-block">
+          All boxes will have the same dimensions and weight
+        </Form.Text>
+      )}
 
-      <Form.Group className="mb-3">
-        <Form.Label>Height (inch)</Form.Label>
-        <Form.Control
-          type="number"
-          name="height"
-          value={boxData.height}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-      */}
-
-      <div className="d-flex justify-content-end gap-2">
-        <Button variant="secondary" onClick={onCancel}>
+      {/* Buttons */}
+      <div className="d-flex justify-content-end">
+        <Button variant="outline-secondary" onClick={onCancel} className="me-2">
           Cancel
         </Button>
         <Button variant="primary" type="submit">
-          Add Box
+          {multiBoxData.isMultiBox
+            ? `Create ${multiBoxData.boxCount} Boxes`
+            : "Create Box"}
         </Button>
       </div>
     </Form>

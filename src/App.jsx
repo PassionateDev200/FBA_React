@@ -7,7 +7,7 @@ import Footer from "./components/Footer";
 
 import Home from "./pages/Home";
 import Home0 from "./pages/Home0";
-import ProductDetail from "./pages/ProductDetail";
+// import ProductDetail from "./pages/ProductDetail";
 import ProductDetail0 from "./pages/ProductDetail0";
 import ExportPage from "./pages/ExportPage";
 import ExportPage0 from "./pages/ExportPage0";
@@ -36,7 +36,6 @@ const App = () => {
               <Routes>
                 <Route path="/" element={<Home0 />} />
                 <Route path="/test" element={<Home />} />
-                <Route path="/products" element={<ProductDetail />} />
                 <Route path="/products0" element={<ProductDetail0 />} />
                 <Route path="/export" element={<ExportPage />} />
                 <Route path="/export0" element={<ExportPage0 />} />

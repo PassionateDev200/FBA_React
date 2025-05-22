@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Container, Card, Form, Button, Alert, Badge } from "react-bootstrap";
-import { BoxSeamFill, Plus, Check2Circle } from "react-bootstrap-icons";
+import {
+  BoxSeamFill,
+  Plus,
+  Check2Circle,
+  InfoCircleFill,
+  Upc,
+  Calculator,
+} from "react-bootstrap-icons";
 import { toast } from "react-toastify";
 import { getImportData, saveImportData } from "../utils/storage0";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -25,6 +32,7 @@ const MultiAdd = () => {
   const [availableBoxes, setAvailableBoxes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [importData, setImportData] = useState(null);
+  const [matchedSku, setMatchedSku] = useState(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -82,6 +90,8 @@ const MultiAdd = () => {
           asin: row[3] || "", // ASIN
           fnsku: row[4] || "", // FNSKU
           availableQty: availableQty, // Amount available to add to boxes
+          expectedQty: expectedQty,
+          boxedQty: boxedQty,
         });
       }
     }
@@ -91,7 +101,7 @@ const MultiAdd = () => {
 
   // Get available box numbers
   const getAvailableBoxes = (data) => {
-    if (!data || !data.mainJson) return { boxes: [], boxNumbers: [] };
+    if (!data || !data.mainJson) return { boxDetails: [], boxNumbers: [] };
 
     const boxDetails = [];
     const boxNumbers = [];
@@ -106,7 +116,7 @@ const MultiAdd = () => {
     }
 
     // If no boxes found, return empty array
-    if (boxNameId === 0) return { boxes: [], boxNumbers: [] };
+    if (boxNameId === 0) return { boxDetails: [], boxNumbers: [] };
 
     // Start from index 1 to skip header
     for (let i = 1; i < data.mainJson[boxNameId].length; i++) {
@@ -131,6 +141,24 @@ const MultiAdd = () => {
 
     return { boxDetails, boxNumbers };
   };
+
+  // Check for matching FNSKU when input changes
+  useEffect(() => {
+    if (!formData.fnsku || !availableSKUs.length) {
+      setMatchedSku(null);
+      return;
+    }
+
+    // Find matching SKU by FNSKU
+    const matched = availableSKUs.find((item) => item.fnsku === formData.fnsku);
+
+    setMatchedSku(matched || null);
+
+    // If matched, clear error
+    if (matched) {
+      setErrors((prev) => ({ ...prev, fnsku: null }));
+    }
+  }, [formData.fnsku, availableSKUs]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -221,8 +249,8 @@ const MultiAdd = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.sku) {
-      newErrors.sku = "Please select a SKU";
+    if (!matchedSku) {
+      newErrors.fnsku = "Please enter a valid FNSKU";
     }
 
     if (!formData.quantity || formData.quantity < 1) {
@@ -249,7 +277,8 @@ const MultiAdd = () => {
     setIsLoading(true);
 
     try {
-      const skuId = parseInt(formData.sku);
+      // Use matched SKU's ID instead of form data sku
+      const skuId = matchedSku.id;
       const quantity = parseInt(formData.quantity);
 
       // Create a deep copy of the import data
@@ -375,36 +404,67 @@ const MultiAdd = () => {
             </div>
           ) : (
             <Form onSubmit={handleSubmit}>
-              {/* SKU Selection */}
+              {/* FNSKU Input Field - REPLACED DROPDOWN */}
               <Form.Group className="mb-3">
-                <Form.Label>SKU</Form.Label>
-                <Form.Select
-                  name="sku"
-                  value={formData.sku}
+                <Form.Label>
+                  <Upc className="me-2" /> Enter FNSKU
+                </Form.Label>
+                <Form.Control
+                  type="text"
+                  name="fnsku"
+                  placeholder="Enter FNSKU (e.g., X004B0UKXN)"
+                  value={formData.fnsku}
                   onChange={handleInputChange}
-                  isInvalid={!!errors.sku}
-                  className="text-black"
-                >
-                  <option value="">Select SKU</option>
-                  {availableSKUs.map((item) => (
-                    <option
-                      key={item.id}
-                      value={item.id}
-                      className="text-black"
-                    >
-                      {item.sku} :: {item.title} (Available: {item.availableQty}
-                      )
-                    </option>
-                  ))}
-                </Form.Select>
+                  isInvalid={!!errors.fnsku}
+                />
                 <Form.Control.Feedback type="invalid">
-                  {errors.sku}
+                  {errors.fnsku}
                 </Form.Control.Feedback>
               </Form.Group>
 
+              {/* Display matched SKU info - NEW SECTION */}
+              {formData.fnsku && (
+                <>
+                  {matchedSku ? (
+                    <div className="alert alert-info mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <strong>FNSKU: {matchedSku.fnsku}</strong>
+                        <Badge bg="success">
+                          Available: {matchedSku.availableQty}
+                        </Badge>
+                      </div>
+                      <div>
+                        <strong>Title:</strong> {matchedSku.title}
+                      </div>
+                      <div>
+                        <strong>SKU:</strong> {matchedSku.sku}
+                      </div>
+                      <div>
+                        <strong>ASIN:</strong> {matchedSku.asin}
+                      </div>
+                      <div className="d-flex justify-content-between mt-2">
+                        <div>
+                          <strong>Expected:</strong> {matchedSku.expectedQty}
+                        </div>
+                        <div>
+                          <strong>Boxed:</strong> {matchedSku.boxedQty}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="alert alert-warning">
+                      <InfoCircleFill className="me-2" />
+                      No matching FNSKU found. Please enter a valid FNSKU.
+                    </div>
+                  )}
+                </>
+              )}
+
               {/* Quantity Input */}
               <Form.Group className="mb-3">
-                <Form.Label>Quantity</Form.Label>
+                <Form.Label>
+                  <Calculator className="me-2" /> Quantity
+                </Form.Label>
                 <Form.Control
                   type="number"
                   name="quantity"
@@ -494,7 +554,9 @@ const MultiAdd = () => {
                   variant="primary"
                   type="submit"
                   disabled={
-                    isLoading || Object.keys(errors).some((key) => errors[key])
+                    isLoading ||
+                    !matchedSku ||
+                    Object.keys(errors).some((key) => errors[key])
                   }
                 >
                   {isLoading ? "Processing..." : "Add Item"}

@@ -7,6 +7,8 @@ import {
   Badge,
   InputGroup,
   FloatingLabel,
+  ButtonGroup,
+  Alert,
 } from "react-bootstrap";
 import {
   BoxSeam,
@@ -19,47 +21,95 @@ import {
   InfoCircleFill,
   Check2,
   Calculator,
+  PencilFill,
 } from "react-bootstrap-icons";
 
 const BoxContent0 = ({
   box,
   boxName,
   addItem,
+  reduceItem,
   availablefnskus,
   error,
   selectId,
   removeFNSKU,
   importData,
 }) => {
-  const [showModal, setShowModal] = useState(false);
-  // State for form data
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Form data
   const [formData, setFormData] = useState({
     fnsku: "",
-    title: "",
-    asin: "",
-    sku: "",
     quantity: 1,
   });
-  // Handle opening the modal
 
-  const handleShowModal = () => {
-    setShowModal(true);
+  // Edit state
+  const [editingItem, setEditingItem] = useState(null);
+  const [newQuantity, setNewQuantity] = useState("");
+  const [editError, setEditError] = useState("");
+
+  // Handle opening the add modal
+  const handleShowAddModal = () => {
+    setShowAddModal(true);
   };
 
-  // Handle closing the modal
-  const handleCloseModal = () => {
-    setShowModal(false);
-    // Reset form data when closing
+  // Handle closing the add modal
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
     setFormData({
       fnsku: "",
-      title: "",
-      asin: "",
-      sku: "",
       quantity: 1,
     });
   };
 
-  // Handle form input changes
+  // Open the edit modal for a specific item
+  const handleShowEditModal = (item) => {
+    // Find availability information
+    const fnskuInfo = availablefnskus.find((fnsku) => {
+      const fnskuRow = fnsku[0];
+      return importData.mainJson[fnskuRow][4] === item.fnsku;
+    });
+
+    if (fnskuInfo) {
+      const fnskuRow = fnskuInfo[0];
+      const row = importData.mainJson[fnskuRow];
+      const expectedQty = parseInt(row[9] || "0");
+      const boxedQty = parseInt(row[10] || "0");
+      const currentQty = parseInt(item.quantity || "0");
+
+      // Set the item with additional availability info
+      // setEditingItem({
+      //   ...item,
+      //   expectedQty,
+      //   boxedQty,
+      //   availableQty: fnskuInfo[1] + currentQty, // Available + current (which will be freed up)
+      //   fnskuRow,
+      // });
+
+      setEditingItem({
+        ...item,
+        expectedQty,
+        boxedQty,
+        availableQty: fnskuInfo[1], // Available + current (which will be freed up)
+        fnskuRow,
+      });
+
+      setNewQuantity(currentQty.toString());
+      setShowEditModal(true);
+    }
+  };
+
+  // Handle closing the edit modal
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingItem(null);
+    setNewQuantity("");
+    setEditError("");
+  };
+
+  // Handle form input changes for add modal
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -68,7 +118,75 @@ const BoxContent0 = ({
     });
   };
 
-  // Handle form submission
+  // Handle quantity change in edit modal
+  const handleQuantityChange = (e) => {
+    setNewQuantity(e.target.value);
+    setEditError(""); // Clear error on input change
+  };
+
+  // Handle save for edit modal
+  const handleSaveEdit = () => {
+    if (!editingItem) return;
+
+    const newQty = parseInt(newQuantity);
+    const currentQty = parseInt(editingItem.quantity);
+
+    // Validation
+    if (isNaN(newQty) || newQty < 0) {
+      setEditError("Please enter a valid quantity");
+      return;
+    }
+
+    // Calculate available unboxed quantity
+    const unboxedQty = editingItem.expectedQty - editingItem.boxedQty;
+
+    // Calculate max allowed quantity (current in this box + available unboxed)
+    const maxAllowed = currentQty + unboxedQty;
+
+    // Check if quantity is within available limits
+    if (newQty > maxAllowed) {
+      setEditError(
+        `Maximum allowed quantity is ${maxAllowed} (${currentQty} current + ${unboxedQty} available)`
+      );
+      return;
+    }
+
+    // If quantity is 0, just remove the item
+    if (newQty === 0) {
+      removeFNSKU(editingItem.fnsku, editingItem.quantity);
+      handleCloseEditModal();
+      return;
+    }
+
+    // If no change, just close
+    if (newQty === currentQty) {
+      handleCloseEditModal();
+      return;
+    }
+
+    // Handle quantity changes
+    if (newQty < currentQty) {
+      // Reducing quantity: remove all, then add the new amount
+      if (newQty > 0) {
+        const difference = currentQty - newQty;
+        const success = reduceItem(editingItem.fnskuRow, difference);
+        if (success) {
+          handleCloseEditModal();
+        }
+      } else {
+        handleCloseEditModal();
+      }
+    } else if (newQty > currentQty) {
+      // Increasing quantity: just add the difference
+      const difference = newQty - currentQty;
+      const success = addItem(editingItem.fnskuRow, difference);
+      if (success) {
+        handleCloseEditModal();
+      }
+    }
+  };
+
+  // Handle form submission for add modal
   const handleSubmit = () => {
     // Find the correct index for the entered FNSKU
     let fnskuIndex = null;
@@ -90,7 +208,7 @@ const BoxContent0 = ({
       // Call the parent component's add item function with the correct index
       let status = addItem(fnskuIndex, parseInt(formData.quantity));
       if (status) {
-        handleCloseModal();
+        handleCloseAddModal();
       }
     } else {
       // Handle the case where no matching FNSKU was found
@@ -100,49 +218,46 @@ const BoxContent0 = ({
   };
 
   return (
-    <Card className="shadow-sm mb-4 h-100">
+    <Card className="shadow-sm h-100">
       <Card.Header
         className="bg-gradient-dark d-flex justify-content-between align-items-center py-3"
         style={{
           background: "linear-gradient(to right, #343a40, #495057)",
         }}
       >
-        <div className="d-flex flex-column">
-          <h5 className="mb-0 text-white d-flex align-items-center">
-            <BoxSeam className="me-2" />
-            {boxName || "No Box Selected"}
-          </h5>
-          {box && box.length > 0 && selectId > 0 && (
-            <div className="text-light  mt-1">
-              <Badge bg="light" text="dark" className="me-2">
-                {
-                  box.filter((item) => item.quantity && item.quantity !== "")
-                    .length
-                }{" "}
-                Items
-              </Badge>
-              <Badge bg="info" className="me-2">
-                {box.reduce((total, item) => {
-                  const qty = parseInt(item.quantity) || 0;
-                  return total + qty;
-                }, 0)}{" "}
-                Total Quantity
-              </Badge>
-            </div>
-          )}
-        </div>
+        <h5 className="mb-0 text-white d-flex align-items-center">
+          <BoxSeam className="me-2" />
+          {boxName || "No Box Selected"}
+        </h5>
+        {box && box.length > 0 && selectId > 0 && (
+          <div className="text-light small mt-1">
+            <Badge bg="light" text="dark" className="me-2">
+              {
+                box.filter((item) => item.quantity && item.quantity !== "")
+                  .length
+              }{" "}
+              Items
+            </Badge>
+            <Badge bg="info" className="me-2">
+              {box.reduce((total, item) => {
+                const qty = parseInt(item.quantity) || 0;
+                return total + qty;
+              }, 0)}{" "}
+              Total Quantity
+            </Badge>
+          </div>
+        )}
         {selectId > 0 && (
           <Button
             variant="light"
             size="sm"
             className="d-flex align-items-center"
-            onClick={handleShowModal}
+            onClick={handleShowAddModal}
           >
             <PlusLg className="me-1" /> Add Item
           </Button>
         )}
       </Card.Header>
-
       <Card.Body>
         {selectId <= 0 ? (
           <div className="text-center py-5">
@@ -169,7 +284,7 @@ const BoxContent0 = ({
                 <th>ASIN</th>
                 <th>FNSKU</th>
                 <th>Quantity</th>
-                <th className="text-center">Action</th>
+                <th className="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -195,21 +310,34 @@ const BoxContent0 = ({
                         </Badge>
                       </td>
                       <td className="text-center">
-                        <Button
-                          variant="light"
-                          size="sm"
-                          className="d-inline-flex align-items-center justify-content-center"
-                          onClick={() =>
-                            removeFNSKU(detail.fnsku, detail.quantity)
-                          }
-                          style={{
-                            width: "32px",
-                            height: "32px",
-                            borderRadius: "50%",
-                          }}
-                        >
-                          <TrashFill className="text-danger" />
-                        </Button>
+                        <ButtonGroup size="sm">
+                          <Button
+                            variant="light"
+                            className="d-inline-flex align-items-center justify-content-center"
+                            onClick={() => handleShowEditModal(detail)}
+                            style={{
+                              width: "32px",
+                              height: "32px",
+                              borderRadius: "50% 0 0 50%",
+                            }}
+                          >
+                            <PencilFill className="text-primary" />
+                          </Button>
+                          <Button
+                            variant="light"
+                            className="d-inline-flex align-items-center justify-content-center"
+                            onClick={() =>
+                              removeFNSKU(detail.fnsku, detail.quantity)
+                            }
+                            style={{
+                              width: "32px",
+                              height: "32px",
+                              borderRadius: "0 50% 50% 0",
+                            }}
+                          >
+                            <TrashFill className="text-danger" />
+                          </Button>
+                        </ButtonGroup>
                       </td>
                     </tr>
                   )
@@ -219,8 +347,13 @@ const BoxContent0 = ({
         )}
       </Card.Body>
 
-      {/* Enhanced Add Item Modal */}
-      <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
+      {/* Add Item Modal */}
+      <Modal
+        show={showAddModal}
+        onHide={handleCloseAddModal}
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
           <Modal.Title>
             <BoxArrowInDown className="me-2" /> Add Item to {boxName}
@@ -272,7 +405,9 @@ const BoxContent0 = ({
                         <div key={index} className="alert alert-info mb-3">
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <strong>FNSKU: {matchingFnskuValue}</strong>
-                            <strong>Available: {availableQty}</strong>
+                            <Badge bg="success">
+                              Available: {availableQty}
+                            </Badge>
                           </div>
                           <div>
                             <strong>Title:</strong> {row[1]}
@@ -288,7 +423,7 @@ const BoxContent0 = ({
                               <strong>Expected:</strong> {expectedQty}
                             </div>
                             <div>
-                              <strong>Scanned:</strong> {boxedQty}
+                              <strong>Boxed:</strong> {boxedQty}
                             </div>
                           </div>
                           <input
@@ -328,7 +463,7 @@ const BoxContent0 = ({
           </Form>
         </Modal.Body>
         <Modal.Footer className="border-0">
-          <Button variant="outline-secondary" onClick={handleCloseModal}>
+          <Button variant="outline-secondary" onClick={handleCloseAddModal}>
             Cancel
           </Button>
           <Button
@@ -338,6 +473,78 @@ const BoxContent0 = ({
             disabled={!formData.fnsku || formData.quantity < 1}
           >
             <Check2 className="me-2" /> Add Item
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Edit Quantity Modal */}
+      <Modal show={showEditModal} onHide={handleCloseEditModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <PencilFill className="me-2" /> Edit Item Quantity
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editingItem && (
+            <Form>
+              <div className="alert alert-info mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <strong>FNSKU: {editingItem.fnsku}</strong>
+                  <Badge bg="success">
+                    Available: {editingItem.availableQty}
+                  </Badge>
+                </div>
+                <div>
+                  <strong>Title:</strong> {editingItem.title}
+                </div>
+                <div>
+                  <strong>SKU:</strong> {editingItem.sku}
+                </div>
+                <div>
+                  <strong>ASIN:</strong> {editingItem.asin}
+                </div>
+                <div className="d-flex justify-content-between mt-2">
+                  <div>
+                    <strong>Expected:</strong> {editingItem.expectedQty}
+                  </div>
+                  <div>
+                    <strong>Boxed:</strong> {editingItem.boxedQty}
+                  </div>
+                </div>
+              </div>
+
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  Current Quantity: <strong>{editingItem.quantity}</strong>
+                </Form.Label>
+                <Form.Control
+                  type="number"
+                  value={newQuantity}
+                  onChange={handleQuantityChange}
+                  min="0"
+                  // max={editingItem.availableQty}
+                  isInvalid={!!editError}
+                />
+                <Form.Text muted>
+                  Enter 0 to remove the item from this box
+                </Form.Text>
+                <Form.Control.Feedback type="invalid">
+                  {editError}
+                </Form.Control.Feedback>
+              </Form.Group>
+            </Form>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="outline-secondary" onClick={handleCloseEditModal}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            className="d-flex align-items-center"
+            onClick={handleSaveEdit}
+          >
+            <Check2 className="me-2" /> Update Quantity
           </Button>
         </Modal.Footer>
       </Modal>
