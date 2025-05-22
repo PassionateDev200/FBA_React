@@ -11,7 +11,7 @@ const initialState = {
   currentPage: 1,
   selectedBoxId: null,
   totalPages: 1,
-  itemsPerPage: 5,
+  itemsPerPage: 15, // Changed from 5 to 15
   totals: { num: 0, expected: 0, boxed: 0 },
 };
 

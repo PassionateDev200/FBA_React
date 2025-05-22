@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Table, Badge } from "react-bootstrap";
-import { getAllShipments, deleteShipment } from "../utils/storage0";
+import { Button, Modal, Table, Badge, Form } from "react-bootstrap";
+import {
+  getAllShipments,
+  deleteShipment,
+  saveImportData,
+} from "../utils/storage0";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,12 +15,16 @@ import {
   Calendar3,
   ClockHistory,
   FileEarmarkArrowDownFill,
+  PencilFill,
+  CheckLg,
 } from "react-bootstrap-icons";
 
 const ShipmentsPage = () => {
   const [shipments, setShipments] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [shipmentToRemove, setShipmentToRemove] = useState(null);
+  const [editingShipmentId, setEditingShipmentId] = useState(null);
+  const [editedName, setEditedName] = useState("");
   const navigate = useNavigate();
 
   // Load all shipments on mount
@@ -78,10 +86,59 @@ const ShipmentsPage = () => {
     return { boxCount, itemCount };
   };
 
+  // Start editing a shipment name
+  const handleEditName = (shipment) => {
+    setEditingShipmentId(shipment.shipmentID);
+    setEditedName(shipment.shipmentName || shipment.shipmentID);
+  };
+
   // Open delete confirmation modal
   const handleDeleteClick = (shipment) => {
     setShipmentToRemove(shipment);
     setShowDeleteModal(true);
+  };
+
+  // Save the edited shipment name
+  const handleSaveName = async (shipment) => {
+    try {
+      // Create a copy of the shipment
+      const updatedShipment = { ...shipment };
+
+      // Update the shipment name
+      updatedShipment.shipmentName = editedName;
+
+      // Save to storage
+      await saveImportData(updatedShipment, shipment.shipmentID);
+
+      // Refresh the shipments list
+      fetchShipments();
+
+      // Clear editing state
+      setEditingShipmentId(null);
+
+      toast.success("Shipment name updated successfully!");
+    } catch (error) {
+      console.error("Error updating shipment name:", error);
+      toast.error("Failed to update shipment name. Please try again.");
+    }
+  };
+
+  // Handle editing input change
+  const handleNameInputChange = (e) => {
+    setEditedName(e.target.value);
+  };
+
+  // Handle pressing Enter key to save
+  const handleKeyPress = (e, shipment) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSaveName(shipment);
+    }
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setEditingShipmentId(null);
   };
 
   // Remove shipment
@@ -126,17 +183,18 @@ const ShipmentsPage = () => {
         <thead className="bg-light">
           <tr>
             <th>Shipment ID</th>
+            <th>Shipment Name</th>
             <th>Boxes</th>
             <th>Items</th>
             <th>Created</th>
             <th>Last Updated</th>
-            <th>Actions</th>
+            <th colSpan="4">Actions</th>
           </tr>
         </thead>
         <tbody>
           {shipments.length === 0 && (
             <tr>
-              <td colSpan={6} className="text-center py-4 text-muted">
+              <td colSpan={9} className="text-center py-4 text-muted">
                 No shipments found.
               </td>
             </tr>
@@ -146,6 +204,50 @@ const ShipmentsPage = () => {
             return (
               <tr key={shipment.shipmentID}>
                 <td className="fw-bold">{shipment.shipmentID}</td>
+                <td>
+                  {editingShipmentId === shipment.shipmentID ? (
+                    <div className="d-flex">
+                      <Form.Control
+                        type="text"
+                        value={editedName}
+                        onChange={handleNameInputChange}
+                        onKeyPress={(e) => handleKeyPress(e, shipment)}
+                        autoFocus
+                        size="sm"
+                        className="me-2"
+                      />
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        onClick={() => handleSaveName(shipment)}
+                        className="me-1"
+                      >
+                        <CheckLg />
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={handleCancelEdit}
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="d-flex align-items-center">
+                      <span className="me-2">
+                        {shipment.shipmentName || shipment.shipmentID}
+                      </span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="p-0 text-muted"
+                        onClick={() => handleEditName(shipment)}
+                      >
+                        <PencilFill size={12} />
+                      </Button>
+                    </div>
+                  )}
+                </td>
                 <td>{boxCount}</td>
                 <td>{itemCount}</td>
                 <td>
@@ -160,41 +262,46 @@ const ShipmentsPage = () => {
                     {formatDate(shipment.lastModifiedDate)}
                   </div>
                 </td>
+                {/* Action buttons - remain the same */}
                 <td>
-                  <div className="d-flex gap-2 justify-content-center">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => navigateToBoxSummary(shipment.shipmentID)}
-                      className="d-flex align-items-center"
-                    >
-                      <BoxSeam className="me-1" /> View Boxes
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => navigateToProducts(shipment.shipmentID)}
-                      className="d-flex align-items-center"
-                    >
-                      <Grid3x3GapFill className="me-1" /> View Products
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => navigateToExport(shipment.shipmentID)}
-                      className="d-flex align-items-center"
-                    >
-                      <FileEarmarkArrowDownFill className="me-1" /> Export
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDeleteClick(shipment)}
-                      className="d-flex align-items-center"
-                    >
-                      <TrashFill className="me-1" /> Remove
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="w-100 d-flex align-items-center justify-content-center"
+                    onClick={() => navigateToBoxSummary(shipment.shipmentID)}
+                  >
+                    <BoxSeam className="me-2" /> Boxes
+                  </Button>
+                </td>
+                <td>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    className="w-100 d-flex align-items-center justify-content-center"
+                    onClick={() => navigateToProducts(shipment.shipmentID)}
+                  >
+                    <Grid3x3GapFill className="me-2" /> Products
+                  </Button>
+                </td>
+                <td>
+                  <Button
+                    variant="outline-success"
+                    size="sm"
+                    className="w-100 d-flex align-items-center justify-content-center"
+                    onClick={() => navigateToExport(shipment.shipmentID)}
+                  >
+                    <FileEarmarkArrowDownFill className="me-2" /> Export
+                  </Button>
+                </td>
+                <td>
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    className="w-100 d-flex align-items-center justify-content-center"
+                    onClick={() => handleDeleteClick(shipment)}
+                  >
+                    <TrashFill className="me-2" /> Remove
+                  </Button>
                 </td>
               </tr>
             );
@@ -202,7 +309,7 @@ const ShipmentsPage = () => {
         </tbody>
       </Table>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - remains the same */}
       <Modal
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
@@ -229,14 +336,6 @@ const ShipmentsPage = () => {
               <strong>{shipmentToRemove?.shipmentID}</strong>? This action
               cannot be undone.
             </p>
-            {shipmentToRemove && (
-              <div className="text-muted small mt-3">
-                <div>Created: {formatDate(shipmentToRemove.createdDate)}</div>
-                <div>
-                  Last updated: {formatDate(shipmentToRemove.lastModifiedDate)}
-                </div>
-              </div>
-            )}
           </div>
         </Modal.Body>
         <Modal.Footer className="border-0">

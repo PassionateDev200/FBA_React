@@ -22,10 +22,11 @@ import {
 import { toast } from "react-toastify";
 
 const BoxSummary0 = () => {
-  const { setSelectedBox, setTotals } = useBoxActions();
-  const { totals } = useBoxState(); // Access totals from context
+  const { setSelectedBox, setTotals, setItemsPerPage } = useBoxActions();
+  const { totals, itemsPerPage } = useBoxState(); // Access totals from context
   const location = useLocation(); // Get location for shipmentID
   const shipmentID = location.state?.shipmentID; // Get shipmentID from route state
+  const [boxQuantities, setBoxQuantities] = useState([]);
 
   const navigate = useNavigate();
   const [boxes, setBoxes] = useState([]);
@@ -108,6 +109,13 @@ const BoxSummary0 = () => {
     });
   };
 
+  // Set items per page to 15 when component mounts
+  useEffect(() => {
+    if (itemsPerPage !== 15 && setItemsPerPage) {
+      setItemsPerPage(15);
+    }
+  }, [itemsPerPage, setItemsPerPage]);
+
   useEffect(() => {
     loadBoxes();
   }, [selectId, shipmentID]);
@@ -126,6 +134,8 @@ const BoxSummary0 = () => {
       let boxNameId = 0;
       setImportData(data);
       calculateTotals(data);
+      // Calculate box quantities here
+      const boxQuantities = calculateBoxQuantities(data);
       let fnsku = [];
 
       for (let i = 0; i < data.mainJson.length; i++) {
@@ -173,6 +183,7 @@ const BoxSummary0 = () => {
       }
 
       setBoxes(boxArray);
+      setBoxQuantities(boxQuantities); // Add this state variable
     });
   };
 
@@ -244,13 +255,8 @@ const BoxSummary0 = () => {
 
   // Handle the add box form submission
   const handleAddBoxSubmit = (boxData) => {
-    setConfirmMessage(`Are you sure you want to add box "${boxData.boxName}"?`);
-    setConfirmAction(() => () => {
-      addBoxToData(boxData);
-      setShowConfirmModal(false);
-      setShowAddModal(false);
-    });
-    setShowConfirmModal(true);
+    addBoxToData(boxData);
+    setShowAddModal(false);
   };
 
   // Add the box data to storage
@@ -329,6 +335,56 @@ const BoxSummary0 = () => {
       calculateTotals(importData);
     }
     return status;
+  };
+
+  // Add this function to calculate quantities for all boxes
+  const calculateBoxQuantities = (data) => {
+    if (!data || !data.mainJson) return [];
+
+    // Find the box name row
+    let boxNameId = 0;
+    for (let i = 0; i < data.mainJson.length; i++) {
+      if (data.mainJson[i][0] === "Name of box") {
+        boxNameId = i;
+        break;
+      }
+    }
+
+    // Create an array to store box quantities
+    const boxQuantities = [];
+
+    // Loop through each box (starting from index 1 to skip header)
+    for (
+      let boxIndex = 1;
+      boxIndex < data.mainJson[boxNameId].length;
+      boxIndex++
+    ) {
+      const boxName = data.mainJson[boxNameId][boxIndex];
+
+      // Skip empty boxes
+      if (!boxName || boxName === "") continue;
+
+      let itemCount = 0;
+      let totalQuantity = 0;
+
+      // Loop through each item row
+      for (let i = 5; i < boxNameId; i++) {
+        // Check if this item has a quantity in this box
+        const quantity = parseInt(data.mainJson[i][boxIndex]) || 0;
+        if (quantity > 0) {
+          itemCount++;
+          totalQuantity += quantity;
+        }
+      }
+
+      // Store the results with original box index
+      boxQuantities[boxIndex] = {
+        itemCount,
+        totalQuantity,
+      };
+    }
+
+    return boxQuantities;
   };
 
   const removeFNSKU = (fnsku, quantity) => {
@@ -616,6 +672,8 @@ const BoxSummary0 = () => {
                 onSelect={onListClicked}
                 onEdit={handleEditBox}
                 onRemoveBox={handleRemoveBox} // Add this new prop
+                boxQuantities={boxQuantities}
+                itemsPerPage={15} // Pass as prop
               />
             </Card.Body>
           </Card>

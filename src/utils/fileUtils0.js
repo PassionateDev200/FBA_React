@@ -171,7 +171,9 @@ export function exportAmazonFormat(importData, shipmentID) {
 
     // Generate the filename with shipmentID if provided
     const filename = shipmentID
-      ? `FBA_${shipmentID}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      ? `FBA_(${shipmentID})_${importData.shipmentName}_${new Date()
+          .toISOString()
+          .slice(0, 10)}.xlsx`
       : `FBA_with_details_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     XLSX.writeFile(wb, filename);
@@ -248,7 +250,9 @@ export function exportBoxSummary(importData, shipmentID) {
 
     // Generate the filename with shipmentID if provided
     const filename = shipmentID
-      ? `BoxSummary_${shipmentID}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      ? `BoxSummary__(${shipmentID})_${importData.shipmentName}_${new Date()
+          .toISOString()
+          .slice(0, 10)}.xlsx`
       : `BoxSummary_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     // Write file

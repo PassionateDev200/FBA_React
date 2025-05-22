@@ -11,9 +11,16 @@ import {
 } from "react-bootstrap-icons";
 import { useBoxState, useBoxActions } from "../context/TotalContent";
 
-const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
+const BoxList0 = ({
+  boxes,
+  onEdit,
+  onSelect,
+  onRemoveBox,
+  boxQuantities,
+  itemsPerPage = 15,
+}) => {
   // Get state and actions from context
-  const { currentPage, selectedBoxId, itemsPerPage } = useBoxState();
+  const { currentPage, selectedBoxId } = useBoxState();
   const { setCurrentPage, setSelectedBox, setTotalPages } = useBoxActions();
 
   // Filter boxes as in original code
@@ -80,6 +87,10 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
         <div className="box-list">
           {currentBoxes.map((box, index) => {
             const originalIndex = getOriginalIndex(index);
+            const boxData = boxQuantities[originalIndex] || {
+              itemCount: 0,
+              totalQuantity: 0,
+            };
 
             return (
               <div
@@ -106,9 +117,25 @@ const BoxList0 = ({ boxes, onEdit, onSelect, onRemoveBox }) => {
                   </div>
                   <div>
                     <div className="fw-medium">{box}</div>
-                    <small className="text-muted">
-                      ID: BOX-{originalIndex - 11}
-                    </small>
+                    <div className="d-flex align-items-center">
+                      <small className="text-muted me-2">
+                        ID: BOX-{originalIndex - 11}
+                      </small>
+                      {boxData.itemCount > 0 && (
+                        <div className="d-flex">
+                          <Badge
+                            bg="secondary"
+                            size="sm"
+                            className="me-1 py-1 px-2"
+                          >
+                            {boxData.itemCount} items
+                          </Badge>
+                          <Badge bg="info" size="sm" className="py-1 px-2">
+                            Qty: {boxData.totalQuantity}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
