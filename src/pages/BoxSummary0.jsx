@@ -16,7 +16,6 @@ import {
   Calendar3,
   ClockHistory,
   ArrowLeft,
-  ArrowRight,
   BoxArrowRight,
 } from "react-bootstrap-icons";
 import { toast } from "react-toastify";

@@ -1,15 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  Card,
-  Button,
-  Modal,
-  Form,
-  Badge,
-  InputGroup,
-  FloatingLabel,
-  ButtonGroup,
-  Alert,
-} from "react-bootstrap";
+import React, { useState } from "react";
+import { Card, Button, Modal, Form, Badge, ButtonGroup } from "react-bootstrap";
 import {
   BoxSeam,
   PlusLg,
