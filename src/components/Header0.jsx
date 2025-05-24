@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // Add this import
 import {
   CloudUploadFill,
   BoxSeamFill,
@@ -10,11 +11,15 @@ import {
   Wifi,
   ArrowRepeat,
   Amazon,
+  PersonFill,
+  BoxArrowRight,
 } from "react-bootstrap-icons";
 
 const Header0 = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth(); // Get auth state
 
   // Add scroll effect
   useEffect(() => {
@@ -31,6 +36,16 @@ const Header0 = () => {
     return location.pathname === path;
   };
 
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Failed to log out", error);
+    }
+  };
+
   return (
     <nav
       className={`navbar navbar-expand-lg sticky-top ${
@@ -41,7 +56,6 @@ const Header0 = () => {
       }}
     >
       <div className="container">
-        {/* <div className="d-flex align-items-center"> */}
         <Link className="navbar-brand d-flex align-items-center" to="/">
           <div className="brand-icon me-2">
             <div className="cube-wrapper">
@@ -63,6 +77,7 @@ const Header0 = () => {
           </div>
           <span className="fw-bold text-white">FBA Tool</span>
         </Link>
+
         <button
           className="navbar-toggler"
           type="button"
@@ -94,28 +109,45 @@ const Header0 = () => {
             </li>
             <li className="nav-item">
               <Link
-                className={`nav-link ${isActive("/settings") ? "active" : ""}`}
+                className={`nav-link ${isActive("/multiAdd") ? "active" : ""}`}
                 to="/multiAdd"
               >
                 <BoxSeam className="nav-icon" />
                 Multi Add
               </Link>
             </li>
-            {/* <li className="nav-item">
-              <Link
-                className={`nav-link ${isActive("/settings") ? "active" : ""}`}
-                to="/settings"
-              >
-                <GearFill className="nav-icon" />
-                Settings
-              </Link>
-            </li> */}
           </ul>
+
+          {/* Login/Logout Button */}
+          <div className="auth-section ms-3">
+            {currentUser ? (
+              <div className="d-flex align-items-center">
+                <span className="user-info me-3">
+                  <PersonFill className="me-1" />
+                  {currentUser.displayName || currentUser.email}
+                </span>
+                <button
+                  className="auth-button logout-button"
+                  onClick={handleLogout}
+                >
+                  <BoxArrowRight className="me-1" />
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button
+                className="auth-button login-button"
+                onClick={() => navigate("/login")}
+              >
+                <PersonFill className="me-1" />
+                Login
+              </button>
+            )}
+          </div>
         </div>
-        {/* </div> */}
       </div>
 
-      {/* Add CSS styles */}
+      {/* Updated CSS styles */}
       <style>
         {`
           .navbar {
@@ -163,6 +195,58 @@ const Header0 = () => {
             height: 3px;
             background-color: #ffffff;
             border-radius: 3px;
+          }
+          
+          /* Auth Button Styles */
+          .auth-section {
+            display: flex;
+            align-items: center;
+          }
+          
+          .auth-button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+          }
+          
+          .auth-button:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          }
+          
+          .login-button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border-color: #3498db;
+          }
+          
+          .login-button:hover {
+            background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+            border-color: #5dade2;
+          }
+          
+          .logout-button:hover {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.8) 0%, rgba(192, 57, 43, 0.8) 100%);
+            border-color: rgba(231, 76, 60, 0.8);
+          }
+          
+          .user-info {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
           }
           
           .connection-status {
@@ -248,6 +332,21 @@ const Header0 = () => {
             
             .navbar .nav-link.active::after {
               width: 40px;
+            }
+            
+            .auth-section {
+              margin-top: 10px;
+              width: 100%;
+            }
+            
+            .auth-button {
+              width: 100%;
+              justify-content: center;
+            }
+            
+            .user-info {
+              margin-bottom: 10px;
+              justify-content: center;
             }
           }
 
