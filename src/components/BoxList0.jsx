@@ -40,27 +40,15 @@ const BoxList0 = ({
   }, [totalPages, setTotalPages]);
 
   // Function to get original index in the boxes array
-  const getOriginalIndex = (pageIndex) => {
-    let actualIndex = 0;
-    let count = 0;
-
-    for (let i = 0; i < boxes.length; i++) {
-      if (i > 11) {
-        if (count === pageIndex + indexOfFirstItem) {
-          actualIndex = i;
-          break;
-        }
-        count++;
-      }
-    }
-
-    return actualIndex;
+  const getboxNum = (box) => {
+    const match = box.match(/B(\d+)/);
+    return match ? parseInt(match[1]) + 11 : null;
   };
 
   // Handle box selection
-  const handleSelect = (originalIndex) => {
-    setSelectedBox(originalIndex); // Update in context
-    onSelect(originalIndex); // Call parent callback
+  const handleSelect = (boxNum) => {
+    setSelectedBox(boxNum); // Update in context
+    onSelect(boxNum); // Call parent callback
   };
 
   return (
@@ -86,41 +74,38 @@ const BoxList0 = ({
       ) : (
         <div className="box-list">
           {currentBoxes.map((box, index) => {
-            const originalIndex = getOriginalIndex(index);
-            const boxData = boxQuantities[originalIndex] || {
+            const boxNum = getboxNum(box);
+            console.log("boxNum ===>", boxNum);
+
+            const boxData = boxQuantities[boxNum] || {
               itemCount: 0,
               totalQuantity: 0,
             };
 
             return (
               <div
-                key={originalIndex}
+                key={boxNum}
                 className={`box-item d-flex justify-content-between align-items-center p-3 border-bottom ${
-                  originalIndex === selectedBoxId ? "selected-box" : ""
+                  boxNum === selectedBoxId ? "selected-box" : ""
                 }`}
               >
                 {/* Make clickable area only on the left part */}
                 <div
                   className="d-flex align-items-center flex-grow-1"
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleSelect(originalIndex)}
+                  onClick={() => handleSelect(boxNum)}
                 >
                   <div className="box-icon me-3">
                     <BoxFill
                       size={20}
                       className={
-                        originalIndex === selectedBoxId
-                          ? "text-primary"
-                          : "text-muted"
+                        boxNum === selectedBoxId ? "text-primary" : "text-muted"
                       }
                     />
                   </div>
                   <div>
                     <div className="fw-medium">{box}</div>
                     <div className="d-flex align-items-center">
-                      <small className="text-muted me-2">
-                        ID: BOX-{originalIndex - 11}
-                      </small>
                       {boxData.itemCount > 0 && (
                         <div className="d-flex">
                           <Badge
@@ -147,8 +132,8 @@ const BoxList0 = ({
                     className="me-2 d-inline-flex align-items-center"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSelect(originalIndex); // Select the box first
-                      onEdit(originalIndex, box);
+                      handleSelect(boxNum); // Select the box first
+                      onEdit(boxNum, box);
                     }}
                   >
                     <PencilFill size={14} className="text-dark" />
@@ -161,8 +146,8 @@ const BoxList0 = ({
                     className="d-inline-flex align-items-center text-danger"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSelect(originalIndex); // Select the box first
-                      onRemoveBox(originalIndex);
+                      handleSelect(boxNum); // Select the box first
+                      onRemoveBox(boxNum);
                     }}
                   >
                     <TrashFill size={14} />

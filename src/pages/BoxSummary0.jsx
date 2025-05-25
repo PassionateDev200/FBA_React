@@ -265,8 +265,9 @@ const BoxSummary0 = () => {
         }
       }
 
-      let boxNum = boxData.boxName.charAt(boxData.boxName.length - 1);
+      let boxNum = getboxNum(boxData.boxName);
       data.mainJson[4].push(`Box ${boxNum} quantity`);
+
       for (let i = 5; i < boxNameId - 1; i++) {
         data.mainJson[i].push("");
       }
@@ -560,33 +561,31 @@ const BoxSummary0 = () => {
     }
   };
 
-  const handleRemoveBox = (boxIndex) => {
+  const handleRemoveBox = async (boxIndex) => {
     // Find the box name from the current boxes array
-    const boxName = boxes[boxIndex] || `Box ${boxIndex}`;
+    // Get the current data
+
+    const data = await getImportData(shipmentID);
+    if (!data) return;
+
+    let boxNameId = 0;
+    for (let i = 0; i < data.mainJson.length; i++) {
+      if (data.mainJson[i][0] === "Name of box") {
+        boxNameId = i;
+        break;
+      }
+    }
+
+    const boxNameForMessage =
+      data.mainJson[boxNameId][boxIndex] || `Box ${boxIndex}`;
 
     // Set confirmation message with the actual box name
     setConfirmMessage(
-      `Are you sure you want to remove "${boxName}"? All items in this box will be unboxed.`
+      `Are you sure you want to remove "${boxNameForMessage}"? All items in this box will be unboxed.`
     );
 
     setConfirmAction(() => async () => {
       try {
-        // Get the current data
-        const data = await getImportData(shipmentID);
-        if (!data) return;
-
-        let boxNameId = 0;
-        for (let i = 0; i < data.mainJson.length; i++) {
-          if (data.mainJson[i][0] === "Name of box") {
-            boxNameId = i;
-            break;
-          }
-        }
-
-        // Store the box name for the success message
-        const boxNameForMessage =
-          data.mainJson[boxNameId][boxIndex] || `Box ${boxIndex}`;
-
         // Store items that need to be unboxed for later reference
         const boxedItems = [];
         for (let i = 5; i < data.mainJson.length; i++) {
@@ -602,11 +601,11 @@ const BoxSummary0 = () => {
         // 1. Remove box info from box-related arrays (name, weight, etc.)
         for (let j = 0; j <= 4; j++) {
           // Remove the box column from box-name, weight, width, length, height rows
-          data.mainJson[boxNameId + j].splice(boxIndex, 1);
+          data.mainJson[boxNameId + j][boxIndex] = "";
         }
 
         // 2. Remove column from box quantity header
-        data.mainJson[4].splice(boxIndex, 1);
+        data.mainJson[4][boxIndex] = "";
 
         // 3. Process each row with items to unbox
         for (let i = 5; i < boxNameId; i++) {
@@ -621,14 +620,14 @@ const BoxSummary0 = () => {
           }
 
           // Remove the box column from this row
-          data.mainJson[i].splice(boxIndex, 1);
+          data.mainJson[i][boxIndex] = "";
         }
 
         // Save the updated data
         await saveImportData(data, shipmentID);
         // Add this line to recalculate totals
         calculateTotals(data);
-
+        console.log("remove data  ===> ", data.mainJson);
         // Reset selected box if it was the deleted one
         if (selectId === boxIndex) {
           setSelectId(0);
@@ -652,6 +651,12 @@ const BoxSummary0 = () => {
     });
 
     setShowConfirmModal(true);
+  };
+
+  // get box number from box name
+  const getboxNum = (boxName) => {
+    const match = boxName.match(/B(\d+)/);
+    return match ? parseInt(match[1]) : null;
   };
 
   return (

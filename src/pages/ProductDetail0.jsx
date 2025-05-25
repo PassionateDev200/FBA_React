@@ -109,7 +109,7 @@ function ProductDetail() {
       return isNaN(parsed) ? 0 : parsed;
     };
 
-    const calculatedTotals = importData.mainJson.reduce(
+    return importData.mainJson.reduce(
       (acc, item) => {
         if (item[4] !== "") {
           acc.expected += safeParseInt(item[9]);
@@ -120,12 +120,12 @@ function ProductDetail() {
       },
       { expected: 0, boxed: 0, num: 0 }
     );
+  }, [importData]);
 
-    // Update context with the calculated totals
-    setTotals(calculatedTotals);
-
-    return calculatedTotals;
-  }, [importData, setTotals]);
+  // Update context in useEffect - AFTER render is complete
+  useEffect(() => {
+    setTotals(totals);
+  }, [totals, setTotals]);
 
   // Format date for display
   const formatDate = (dateString) => {

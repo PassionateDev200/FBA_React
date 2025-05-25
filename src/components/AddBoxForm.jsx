@@ -204,63 +204,6 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
         )}
       </Form.Group>
 
-      {/* Weight */}
-      {/* <Form.Group className="mb-3">
-        <Form.Label>Weight (lb)</Form.Label>
-        <Form.Control
-          type="number"
-          name="weight"
-          value={boxData.weight}
-          onChange={handleChange}
-          step="0.1"
-        />
-        {multiBoxData.isMultiBox && (
-          <Form.Text className="text-muted">
-            This weight will be applied to all boxes
-          </Form.Text>
-        )}
-      </Form.Group> */}
-
-      {/* Dimensions */}
-      {/* <div className="row">
-        <div className="col-md-4">
-          <Form.Group className="mb-3">
-            <Form.Label>Width (inch)</Form.Label>
-            <Form.Control
-              type="number"
-              name="width"
-              value={boxData.width}
-              onChange={handleChange}
-              step="0.1"
-            />
-          </Form.Group>
-        </div>
-        <div className="col-md-4">
-          <Form.Group className="mb-3">
-            <Form.Label>Length (inch)</Form.Label>
-            <Form.Control
-              type="number"
-              name="length"
-              value={boxData.length}
-              onChange={handleChange}
-              step="0.1"
-            />
-          </Form.Group>
-        </div>
-        <div className="col-md-4">
-          <Form.Group className="mb-3">
-            <Form.Label>Height (inch)</Form.Label>
-            <Form.Control
-              type="number"
-              name="height"
-              value={boxData.height}
-              onChange={handleChange}
-              step="0.1"
-            />
-          </Form.Group>
-        </div>
-      </div> */}
-
       {multiBoxData.isMultiBox && (
         <Form.Text className="text-muted mb-3 d-block">
           All boxes will have the same dimensions and weight
