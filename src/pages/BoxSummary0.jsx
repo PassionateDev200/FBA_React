@@ -253,10 +253,69 @@ const BoxSummary0 = () => {
     setShowAddModal(true);
   };
 
-  // Add the box data to storage
+  // Handle the add box form submission - UPDATED
+  const handleAddBoxSubmit = (submissionData) => {
+    if (submissionData.multipleBoxes) {
+      // Handle multiple boxes
+      addMultipleBoxesToData(submissionData.multipleBoxes);
+    } else if (submissionData.isRestoration) {
+      // Handle restoration of deleted box
+      restoreDeletedBox(submissionData);
+    } else {
+      // Handle single box
+      addBoxToData(submissionData);
+    }
+    setShowAddModal(false);
+  };
+
+  // NEW FUNCTION: Restore a deleted box
+  const restoreDeletedBox = async (boxData) => {
+    try {
+      const data = await getImportData(shipmentID);
+      if (!data) return;
+
+      let boxNameId = 0;
+      for (let i = 0; i < data.mainJson.length; i++) {
+        if (data.mainJson[i][0] === "Name of box") {
+          boxNameId = i;
+          break;
+        }
+      }
+
+      const restoreIndex = boxData.restorationIndex;
+
+      // Restore box info at the specific index
+      data.mainJson[boxNameId][restoreIndex] = boxData.boxName;
+      data.mainJson[boxNameId + 1][restoreIndex] = boxData.weight;
+      data.mainJson[boxNameId + 2][restoreIndex] = boxData.width;
+      data.mainJson[boxNameId + 3][restoreIndex] = boxData.length;
+      data.mainJson[boxNameId + 4][restoreIndex] = boxData.height;
+
+      // Restore box quantity header
+      const boxNum = getboxNum(boxData.boxName);
+      data.mainJson[4][restoreIndex] = `Box ${boxNum} quantity`;
+
+      // Save updated data
+      await saveImportData(data, shipmentID);
+
+      // Reload boxes to show the updated list
+      loadBoxes();
+
+      // Select the restored box
+      setTimeout(() => {
+        setSelectedBox(restoreIndex);
+        onListClicked(restoreIndex);
+        toast.success(`Box "${boxData.boxName}" restored successfully!`);
+      }, 100);
+    } catch (error) {
+      console.error("Error restoring box:", error);
+      toast.error("Failed to restore box. Please try again.");
+    }
+  };
+
+  // UPDATED: Add the box data to storage (for completely new boxes)
   const addBoxToData = (boxData) => {
     getImportData(shipmentID).then((data) => {
-      // Pass shipmentID
       let boxNameId = 0;
       for (let i = 0; i < data.mainJson.length; i++) {
         if (data.mainJson[i][0] === "Name of box") {
@@ -268,7 +327,7 @@ const BoxSummary0 = () => {
       let boxNum = getboxNum(boxData.boxName);
       data.mainJson[4].push(`Box ${boxNum} quantity`);
 
-      for (let i = 5; i < boxNameId - 1; i++) {
+      for (let i = 5; i < boxNameId; i++) {
         data.mainJson[i].push("");
       }
       data.mainJson[boxNameId].push(boxData.boxName);
@@ -281,7 +340,6 @@ const BoxSummary0 = () => {
 
       // Save updated data with shipmentID
       saveImportData(data, shipmentID).then(() => {
-        // Use saveImportData with shipmentID
         // Reload boxes to show the updated list
         loadBoxes();
 
@@ -386,18 +444,6 @@ const BoxSummary0 = () => {
     }
 
     return status;
-  };
-
-  // Handle the add box form submission - UPDATED
-  const handleAddBoxSubmit = (submissionData) => {
-    if (submissionData.multipleBoxes) {
-      // Handle multiple boxes
-      addMultipleBoxesToData(submissionData.multipleBoxes);
-    } else {
-      // Handle single box
-      addBoxToData(submissionData);
-    }
-    setShowAddModal(false);
   };
 
   // Add multiple boxes to data - NEW FUNCTION
