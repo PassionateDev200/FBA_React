@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // Add this import
 
-// Your web app's Firebase configuration (replace with your actual config)
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -11,13 +11,13 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
-console.log(
-  "process.env.REACT_APP_FIREBASE_API_KEY",
-  process.env.REACT_APP_FIREBASE_API_KEY
-);
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
+
+// Initialize Cloud Firestore and get a reference to the service
+export const db = getFirestore(app); // Add this line
+
 export default app;
