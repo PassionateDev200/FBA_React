@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useFirebaseDataDownload } from "../hooks/useFirebaseDataDownload";
 import MigrationModal from "./MigrationModal";
+import LoadingDataModal from "./LoadingDataModal";
 import useOnlineStatus from "../hooks/useOnlineStatus";
 import {
   CloudUploadFill,
+  CloudDownloadFill,
   BoxSeamFill,
   FileEarmarkArrowDownFill,
   GearFill,
@@ -24,8 +27,21 @@ const Header0 = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showMigrationModal, setShowMigrationModal] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
   const { currentUser, logout } = useAuth();
   const isOnline = useOnlineStatus();
+
+  // Data download hook
+  const {
+    isLoading,
+    isComplete,
+    progress,
+    message,
+    error,
+    downloadResult,
+    startDownload,
+    resetDownload,
+  } = useFirebaseDataDownload();
 
   // Add scroll effect
   useEffect(() => {
@@ -55,7 +71,44 @@ const Header0 = () => {
   // Handle migration completion
   const handleMigrationComplete = (result) => {
     console.log("Migration completed:", result);
-    // You can add additional logic here if needed
+  };
+
+  // Handle loading data button click
+  const handleLoadingData = async () => {
+    if (!currentUser || !isOnline) return;
+
+    setShowLoadingModal(true);
+    const result = await startDownload(currentUser.email);
+
+    // Auto-redirect to shipments if data was downloaded successfully
+    if (result.success && result.hasData) {
+      setTimeout(() => {
+        navigate("/shipments");
+        setShowLoadingModal(false);
+        resetDownload();
+      }, 2000);
+    }
+  };
+
+  // Handle navigation to shipments
+  const handleNavigateToShipments = () => {
+    navigate("/shipments");
+    setShowLoadingModal(false);
+    resetDownload();
+  };
+
+  // Handle retry download
+  const handleRetryDownload = () => {
+    resetDownload();
+    handleLoadingData();
+  };
+
+  // Handle close loading modal
+  const handleCloseLoadingModal = () => {
+    if (!isLoading) {
+      setShowLoadingModal(false);
+      resetDownload();
+    }
   };
 
   return (
@@ -139,10 +192,35 @@ const Header0 = () => {
             <div className="auth-section ms-3">
               {currentUser ? (
                 <div className="d-flex align-items-center">
-                  <span className="user-info me-3">
-                    <PersonFill className="me-1" />
-                    {currentUser.displayName || currentUser.email}
-                  </span>
+                  {/* Loading Button - Only show when logged in */}
+                  <button
+                    className={`auth-button loading-button me-2 ${
+                      !isOnline ? "offline" : ""
+                    }`}
+                    onClick={handleLoadingData}
+                    disabled={!isOnline || isLoading}
+                    title={
+                      !isOnline
+                        ? "Offline - Cannot load data"
+                        : "Load data from Firebase"
+                    }
+                  >
+                    {isLoading ? (
+                      <div
+                        className="spinner-border spinner-border-sm me-1"
+                        role="status"
+                      ></div>
+                    ) : isOnline ? (
+                      <CloudDownloadFill className="me-1" />
+                    ) : (
+                      <WifiOff className="me-1" />
+                    )}
+                    {isLoading
+                      ? "Loading..."
+                      : isOnline
+                      ? "Load Data"
+                      : "Offline"}
+                  </button>
 
                   {/* Migration Button - Only show when logged in */}
                   <button
@@ -164,6 +242,11 @@ const Header0 = () => {
                     )}
                     {isOnline ? "Migrate" : "Offline"}
                   </button>
+
+                  <span className="user-info me-3">
+                    <PersonFill className="me-1" />
+                    {currentUser.displayName || currentUser.email}
+                  </span>
 
                   <button
                     className="auth-button logout-button"
@@ -275,27 +358,43 @@ const Header0 = () => {
               border-color: #5dade2;
             }
             
+            .loading-button {
+              background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+              border-color: #17a2b8;
+            }
+            
+            .loading-button:hover:not(:disabled) {
+              background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+              border-color: #20c997;
+            }
+            
             .migration-button {
               background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
               border-color: #27ae60;
             }
             
-            .migration-button:hover {
+            .migration-button:hover:not(:disabled) {
               background: linear-gradient(135deg, #2ecc71 0%, #58d68d 100%);
               border-color: #2ecc71;
             }
             
-            .migration-button.offline {
+            .auth-button.offline {
               background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
               border-color: #95a5a6;
               cursor: not-allowed;
               opacity: 0.6;
             }
 
-            .migration-button.offline:hover {
+            .auth-button.offline:hover {
               background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
               transform: none;
               box-shadow: none;
+            }
+            
+            .auth-button:disabled {
+              opacity: 0.7;
+              cursor: not-allowed;
+              transform: none;
             }
             
             .logout-button:hover {
@@ -454,6 +553,20 @@ const Header0 = () => {
         show={showMigrationModal}
         onHide={() => setShowMigrationModal(false)}
         onMigrationComplete={handleMigrationComplete}
+      />
+
+      {/* Loading Data Modal */}
+      <LoadingDataModal
+        show={showLoadingModal}
+        onHide={handleCloseLoadingModal}
+        isLoading={isLoading}
+        isComplete={isComplete}
+        progress={progress}
+        message={message}
+        error={error}
+        downloadResult={downloadResult}
+        onNavigateToShipments={handleNavigateToShipments}
+        onRetry={handleRetryDownload}
       />
     </>
   );

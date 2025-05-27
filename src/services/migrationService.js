@@ -11,6 +11,32 @@ import {
 } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 
+// Helper function to create valid dates
+const createValidDate = (dateValue) => {
+  // If no date value provided, use current time
+  if (!dateValue) {
+    return new Date();
+  }
+
+  // If it's already a valid Date object
+  if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+    return dateValue;
+  }
+
+  // Try to create a new Date
+  const date = new Date(dateValue);
+
+  // Check if the resulting date is valid
+  if (isNaN(date.getTime())) {
+    console.warn(
+      `Invalid date value: ${dateValue}, using current time instead`
+    );
+    return new Date(); // Fallback to current time
+  }
+
+  return date;
+};
+
 // Helper function to sanitize email for Firebase key
 const sanitizeEmailForFirebase = (email) => {
   return email
@@ -121,7 +147,7 @@ export class MigrationService {
     return shipments;
   }
 
-  // NEW: Method to flatten nested arrays for Firestore
+  // Method to flatten nested arrays for Firestore
   flattenNestedArrays(mainJsonArray) {
     if (!Array.isArray(mainJsonArray)) {
       return {
@@ -175,7 +201,7 @@ export class MigrationService {
     return flattened;
   }
 
-  // NEW: Static method to restore nested arrays from flattened data
+  // Static method to restore nested arrays from flattened data
   static restoreNestedArrays(flattenedData) {
     if (!flattenedData || !flattenedData._metadata?.isFlattened) {
       return flattenedData;
@@ -258,7 +284,7 @@ export class MigrationService {
     return restored;
   }
 
-  // UPDATED: Transform data to Firebase format with flattened arrays
+  // UPDATED: Transform data to Firebase format with validated dates
   transformDataForFirebase(rawData) {
     return rawData.map((item) => {
       const shipmentData = item.data || item;
@@ -268,18 +294,23 @@ export class MigrationService {
         shipmentData.mainJson || []
       );
 
+      // Use validated dates - THIS IS THE KEY FIX
+      const createdDate = createValidDate(
+        item.createdDate || shipmentData.createdDate
+      );
+
+      const lastModifiedDate = createValidDate(
+        item.lastModifiedDate || shipmentData.lastModifiedDate
+      );
+
       return {
         shipmentID: item.shipmentID || shipmentData.shipmentID,
         shipmentName: shipmentData.shipmentName || item.shipmentID,
         mainJson: flattenedMainJson, // Use flattened version
         userEmail: this.userEmail,
         sanitizedEmail: this.sanitizedEmail,
-        createdDate: new Date(
-          item.createdDate || shipmentData.createdDate || Date.now()
-        ),
-        lastModifiedDate: new Date(
-          item.lastModifiedDate || shipmentData.lastModifiedDate || Date.now()
-        ),
+        createdDate: createdDate, // Use validated date
+        lastModifiedDate: lastModifiedDate, // Use validated date
         migratedAt: serverTimestamp(),
         version: "1.0",
       };
@@ -383,6 +414,18 @@ export class MigrationService {
         };
       }
 
+      // Debug: Check date values before transformation
+      console.log("🔍 Debugging date values...");
+      allData.slice(0, 2).forEach((item, index) => {
+        const shipmentData = item.data || item;
+        console.log(`Item ${index}:`, {
+          createdDate: item.createdDate,
+          shipmentCreatedDate: shipmentData.createdDate,
+          lastModifiedDate: item.lastModifiedDate,
+          shipmentLastModifiedDate: shipmentData.lastModifiedDate,
+        });
+      });
+
       // Step 2: Transform data for Firebase
       console.log("🔄 Transforming data for Firebase...");
       const transformedData = this.transformDataForFirebase(allData);
@@ -463,7 +506,7 @@ export const verifyUserMigration = async (userEmail) => {
   return await migrationService.verifyMigration();
 };
 
-// NEW: Function to get shipment data from Firebase with array restoration
+// Function to get shipment data from Firebase with array restoration
 export const getShipmentFromFirebase = async (userEmail, shipmentID) => {
   try {
     const sanitizedEmail = sanitizeEmailForFirebase(userEmail);
@@ -488,7 +531,7 @@ export const getShipmentFromFirebase = async (userEmail, shipmentID) => {
   }
 };
 
-// NEW: Function to save shipment data to Firebase with array flattening
+// Function to save shipment data to Firebase with array flattening
 export const saveShipmentToFirebase = async (
   userEmail,
   shipmentID,
