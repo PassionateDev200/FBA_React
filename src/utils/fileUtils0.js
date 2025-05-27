@@ -205,22 +205,27 @@ export function exportBoxSummary(importData, shipmentID) {
     // Extract box details arrays
     const name = importData.mainJson[boxNameId];
 
-    // Create worksheet data array
-    const ws_data = [["Box Summary with FNSKU Details"]];
+    // Create worksheet data array with headers
+    const ws_data = [
+      ["Box Summary with FNSKU Details", ""], // Title row
+    ];
 
     // Add shipmentID to summary if provided
     if (shipmentID) {
-      ws_data.push([`Shipment ID: ${shipmentID}`]);
-      ws_data.push([" "]); // Empty row for spacing
+      ws_data.push([`Shipment ID: ${shipmentID}`, ""]);
+      ws_data.push(["", ""]); // Empty row for spacing
     }
+
+    // Add column headers
+    ws_data.push(["Box Name", "Contents (FNSKU - Quantity)"]);
 
     // Process each box
     for (let i = 1; i < name.length; i++) {
       // Skip empty boxes
       if (name[i] === "") continue;
 
-      // Format box header details
-      const boxHeader = `${name[i]}`;
+      // Get box name for Column A
+      const boxName = name[i];
 
       // Get FNSKU items for this box
       const boxItems = [];
@@ -231,19 +236,33 @@ export function exportBoxSummary(importData, shipmentID) {
         }
       });
 
-      // Add box data to worksheet
+      // Add box data to worksheet with separate columns
       if (boxItems.length > 0) {
-        ws_data.push([boxHeader + "| " + boxItems.join(", ")]);
+        ws_data.push([boxName, boxItems.join(", ")]);
       } else {
-        ws_data.push([boxHeader + "| No items"]);
+        ws_data.push([boxName, "No items"]);
       }
     }
 
     // Create worksheet and add to workbook
     const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-    // Set column width
-    ws["!cols"] = [{ wch: 150 }]; // Set column width to accommodate long entries
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 20 }, // Column A width for box names
+      { wch: 100 }, // Column B width for contents
+    ];
+
+    // Add merge cells for title and shipment ID
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }, // Merge title across both columns
+    ];
+
+    if (shipmentID) {
+      ws["!merges"].push(
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } } // Merge shipment ID across both columns
+      );
+    }
 
     // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, "Box Summary");
