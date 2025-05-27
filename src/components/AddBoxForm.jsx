@@ -267,12 +267,12 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
           )}
 
           <div className="d-flex justify-content-between">
-            <Button
+            {/* <Button
               variant="outline-secondary"
               onClick={() => setShowNewBoxForm(true)}
             >
               Skip & Create New Box
-            </Button>
+            </Button> */}
             <Button
               variant="success"
               onClick={handleRestoreDeletedBox}
@@ -317,10 +317,10 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
                 value={multiBoxData.boxCount}
                 onChange={handleMultiBoxChange}
                 min="1"
-                max="50"
+                max="200"
               />
               <Form.Text className="text-muted">
-                Enter the number of boxes you want to add (1-50)
+                Enter the number of boxes you want to add (1-100)
               </Form.Text>
             </Form.Group>
           )}
@@ -354,7 +354,7 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
                   : boxData.boxName
               }
               onChange={handleChange}
-              disabled={multiBoxData.isMultiBox}
+              disabled
             />
             {multiBoxData.isMultiBox && (
               <Form.Text className="text-muted">
@@ -455,12 +455,12 @@ const AddBoxForm = ({ onSubmit, onCancel, shipmentID }) => {
           >
             Cancel
           </Button>
-          <Button
+          {/* <Button
             variant="outline-primary"
             onClick={() => setShowNewBoxForm(true)}
           >
             Skip & Create New Box
-          </Button>
+          </Button> */}
         </div>
       )}
     </Form>
