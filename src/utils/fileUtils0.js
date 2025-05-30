@@ -95,6 +95,30 @@ export function exportAmazonFormat(importData, shipmentID) {
     const wb = XLSX.utils.book_new();
     const ws_data = [];
 
+    // Helper function to convert numeric strings from column 9 onwards
+    const convertNumericFromColumn9 = (row) => {
+      return row.map((cell, cellIndex) => {
+        // Leave columns 0-8 untouched
+        if (cellIndex < 9) return cell;
+
+        // Handle empty cells
+        if (cell === null || cell === undefined || cell === "") return cell;
+
+        // Convert numeric strings to numbers
+        if (typeof cell === "string") {
+          // Remove commas and whitespace
+          const cleanString = cell.replace(/,|\s/g, "");
+          const numberValue = Number(cleanString);
+
+          // Return number if valid, otherwise original value
+          if (!isNaN(numberValue) && cleanString !== "") {
+            return numberValue;
+          }
+        }
+        return cell;
+      });
+    };
+
     // 1. Add Instruction Sheet (if available from original import)
     if (importData?.originalSheetData?.instruction?.data) {
       const ws_instruction = XLSX.utils.aoa_to_sheet(
@@ -107,14 +131,18 @@ export function exportAmazonFormat(importData, shipmentID) {
       );
     }
 
-    // 2. Create and Add BoxSummary Sheet (your main output)
+    // 2. Process and Add BoxSummary Sheet
     for (let i = 0; i < max; i++) {
       if (importData.mainJson[i][0] === "Name of box") {
         box_merge_num = i;
       }
-      ws_data.push(importData.mainJson[i]);
+
+      // Convert numeric values from column 9 onwards
+      const processedRow = convertNumericFromColumn9(importData.mainJson[i]);
+      ws_data.push(processedRow);
     }
 
+    // Calculate box counter
     const boxCount = importData.mainJson[box_merge_num];
     for (let i = 0; i < boxCount.length; i++) {
       if (boxCount[i] !== "") {
@@ -122,35 +150,29 @@ export function exportAmazonFormat(importData, shipmentID) {
       }
     }
 
-    importData.mainJson[2][12] = box_counter;
+    // Explicitly convert box counter to number (column 12)
+    importData.mainJson[2][12] = Number(box_counter);
+
+    // Create worksheet with processed data
     const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+    // Configure cell merges
     ws["!merges"] = [];
     for (let i = 0; i < max; i++) {
-      if (0 === i) {
-        ws["!merges"].push({
-          s: { r: i, c: 0 }, // Start at column A
-          e: { r: i, c: 11 }, // End at column C
-        });
-      } else if (1 === i) {
-        ws["!merges"].push({
-          s: { r: i, c: 0 }, // Start at column A
-          e: { r: i, c: 1 }, // End at column C
-        });
-      } else if (2 === i) {
-        ws["!merges"].push({
-          s: { r: i, c: 0 }, // Start at column A
-          e: { r: i, c: 2 }, // End at column C
-        });
-        ws["!merges"].push({
-          s: { r: i, c: 8 }, // Start at column A
-          e: { r: i, c: 11 }, // End at column C
-        });
-      } else if (box_merge_num === i) {
+      if (i === 0) {
+        // Merge first row columns A-L
+        ws["!merges"].push({ s: { r: i, c: 0 }, e: { r: i, c: 11 } });
+      } else if (i === 1) {
+        // Merge second row columns A-B
+        ws["!merges"].push({ s: { r: i, c: 0 }, e: { r: i, c: 1 } });
+      } else if (i === 2) {
+        // Merge third row columns A-C and I-L
+        ws["!merges"].push({ s: { r: i, c: 0 }, e: { r: i, c: 2 } });
+        ws["!merges"].push({ s: { r: i, c: 8 }, e: { r: i, c: 11 } });
+      } else if (i === box_merge_num) {
+        // Merge box header rows
         for (let j = 0; j <= 4; j++) {
-          ws["!merges"].push({
-            s: { r: i + j, c: 0 }, // Start at column A
-            e: { r: i + j, c: 11 }, // End at column C
-          });
+          ws["!merges"].push({ s: { r: i + j, c: 0 }, e: { r: i + j, c: 11 } });
         }
       }
     }
