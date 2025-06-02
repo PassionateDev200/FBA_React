@@ -229,17 +229,17 @@ export function exportBoxSummary(importData, shipmentID) {
 
     // Create worksheet data array with headers
     const ws_data = [
-      ["Box Summary with FNSKU Details", ""], // Title row
+      ["Box Summary with FNSKU Details", "", ""], //  Added third column
     ];
 
     // Add shipmentID to summary if provided
     if (shipmentID) {
-      ws_data.push([`Shipment ID: ${shipmentID}`, ""]);
-      ws_data.push(["", ""]); // Empty row for spacing
+      ws_data.push([`Shipment ID: ${shipmentID}`, "", ""]); //  Added third column
+      ws_data.push(["", "", ""]); //  Added third column for spacing
     }
 
-    // Add column headers
-    ws_data.push(["Box Name", "Contents (FNSKU - Quantity)"]);
+    //  Updated column headers to include Total Units
+    ws_data.push(["Box Name", "Contents (FNSKU - Quantity)", "Total Units"]);
 
     // Process each box
     for (let i = 1; i < name.length; i++) {
@@ -249,40 +249,41 @@ export function exportBoxSummary(importData, shipmentID) {
       // Get box name for Column A
       const boxName = name[i];
 
-      // Get FNSKU items for this box
       const boxItems = [];
+      let totalUnits = 0; // Track total units in this box
+
       importData.mainJson.forEach((row, idx) => {
         // Only process rows that have FNSKU information (column 4)
         if (idx > 4 && row[4] !== "" && row[i] && row[i] !== "") {
+          const quantity = parseInt(row[i]) || 0; // Parse quantity as integer
           boxItems.push(`${row[4]} - ${row[i]}`);
+          totalUnits += quantity; // Add to total units
         }
       });
 
-      // Add box data to worksheet with separate columns
       if (boxItems.length > 0) {
-        ws_data.push([boxName, boxItems.join(", ")]);
+        ws_data.push([boxName, boxItems.join(", "), totalUnits]);
       } else {
-        ws_data.push([boxName, "No items"]);
+        ws_data.push([boxName, "No items", 0]);
       }
     }
 
     // Create worksheet and add to workbook
     const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-    // Set column widths
     ws["!cols"] = [
       { wch: 20 }, // Column A width for box names
       { wch: 100 }, // Column B width for contents
+      { wch: 15 }, // Column C width for total units
     ];
 
-    // Add merge cells for title and shipment ID
     ws["!merges"] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }, // Merge title across both columns
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }, // Merge title across all three columns
     ];
 
     if (shipmentID) {
       ws["!merges"].push(
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } } // Merge shipment ID across both columns
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } } // Merge shipment ID across all three columns
       );
     }
 
