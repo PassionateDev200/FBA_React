@@ -41,7 +41,7 @@ const BoxContent0 = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // === MODIFIED/ADDED: Add mode state for tabs ===
+  // Add mode state for tabs
   const [addMode, setAddMode] = useState("single"); // "single" or "multi"
 
   // Form data for single add
@@ -50,7 +50,7 @@ const BoxContent0 = ({
     quantity: 1,
   });
 
-  // === MODIFIED/ADDED: Multi add state ===
+  // Multi add state
   const [multiRows, setMultiRows] = useState([{ fnsku: "" }]);
   const [multiQty, setMultiQty] = useState(1);
 
@@ -64,7 +64,7 @@ const BoxContent0 = ({
     setShowAddModal(true);
   };
 
-  // === MODIFIED/ADDED: Reset all add forms on close ===
+  // Reset all add forms on close
   const handleCloseAddModal = () => {
     setShowAddModal(false);
     setFormData({ fnsku: "", quantity: 1 });
@@ -116,7 +116,7 @@ const BoxContent0 = ({
     });
   };
 
-  // === MODIFIED/ADDED: Multi add handlers ===
+  // Multi add handlers
   const handleMultiFnskuChange = (idx, value) => {
     setMultiRows(
       multiRows.map((row, i) => (i === idx ? { ...row, fnsku: value } : row))
@@ -172,40 +172,46 @@ const BoxContent0 = ({
     }
   };
 
-  // Handle form submission for single add
-  const handleSubmit = () => {
-    let fnskuIndex = null;
+  // === MODIFIED: Enhanced matching function to check FNSKU, ASIN, and SKU ===
+  const findMatchingProduct = (inputValue) => {
     for (const fnsku of availablefnskus) {
       const fnskuRow = fnsku[0];
-      const matchingFnskuValue = importData.mainJson[fnskuRow][4];
-      if (matchingFnskuValue === formData.fnsku) {
-        fnskuIndex = fnskuRow;
-        break;
+      const row = importData.mainJson[fnskuRow];
+
+      // Check FNSKU (column 4), ASIN (column 3), and SKU (column 0)
+      if (
+        row[4] === inputValue || // FNSKU
+        row[3] === inputValue || // ASIN
+        row[0] === inputValue // SKU
+      ) {
+        return { fnskuRow, row, fnsku };
       }
     }
-    if (fnskuIndex !== null) {
-      let status = addItem(fnskuIndex, parseInt(formData.quantity));
+    return null;
+  };
+
+  // === MODIFIED: Handle form submission for single add ===
+  const handleSubmit = () => {
+    const matchingProduct = findMatchingProduct(formData.fnsku);
+
+    if (matchingProduct) {
+      let status = addItem(
+        matchingProduct.fnskuRow,
+        parseInt(formData.quantity)
+      );
       if (status) handleCloseAddModal();
     } else {
-      // Optionally set error state here
-      console.error("No matching FNSKU found");
+      console.error("No matching FNSKU/ASIN/SKU found");
     }
   };
 
-  // === MODIFIED/ADDED: Handle submit for multi add ===
+  // === MODIFIED: Handle submit for multi add ===
   const handleMultiSubmit = () => {
     multiRows.forEach((row) => {
-      let fnskuIndex = null;
-      for (const fnsku of availablefnskus) {
-        const fnskuRow = fnsku[0];
-        const matchingFnskuValue = importData.mainJson[fnskuRow][4];
-        if (matchingFnskuValue === row.fnsku) {
-          fnskuIndex = fnskuRow;
-          break;
-        }
-      }
-      if (fnskuIndex !== null && row.fnsku) {
-        addItem(fnskuIndex, parseInt(multiQty));
+      const matchingProduct = findMatchingProduct(row.fnsku);
+
+      if (matchingProduct && row.fnsku) {
+        addItem(matchingProduct.fnskuRow, parseInt(multiQty));
       }
     });
     handleCloseAddModal();
@@ -341,7 +347,7 @@ const BoxContent0 = ({
         )}
       </Card.Body>
 
-      {/* === MODIFIED/ADDED: Add Item Modal with Tabs === */}
+      {/* Add Item Modal with Tabs */}
       <Modal
         show={showAddModal}
         onHide={handleCloseAddModal}
@@ -364,75 +370,79 @@ const BoxContent0 = ({
             <Tab eventKey="single" title="Single Add">
               <Form>
                 <Form.Group className="mb-3">
+                  {/* === MODIFIED: Updated label text === */}
                   <Form.Label>
-                    <Upc className="me-2" /> Enter FNSKU
+                    <Upc className="me-2" /> Enter FNSKU/ASIN/Merchant SKU
                   </Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Enter FNSKU (e.g., X004B0UKXN)"
+                    placeholder="Enter FNSKU (e.g., X004B0UKXN), ASIN, or Merchant SKU"
                     value={formData.fnsku}
                     onChange={(e) => {
-                      const enteredFnsku = e.target.value;
+                      const enteredValue = e.target.value;
                       setFormData({
                         ...formData,
-                        fnsku: enteredFnsku,
+                        fnsku: enteredValue,
                       });
                     }}
                   />
                 </Form.Group>
                 {formData.fnsku && (
                   <>
-                    {availablefnskus.some((fnsku) => {
-                      const fnskuRow = fnsku[0];
-                      const matchingFnskuValue =
-                        importData.mainJson[fnskuRow][4];
-                      return matchingFnskuValue === formData.fnsku;
-                    }) ? (
-                      availablefnskus.map((fnsku, index) => {
-                        const fnskuRow = fnsku[0];
-                        const availableQty = fnsku[1];
-                        const matchingFnskuValue =
-                          importData.mainJson[fnskuRow][4];
-                        if (matchingFnskuValue === formData.fnsku) {
-                          const row = importData.mainJson[fnskuRow];
-                          const expectedQty = parseInt(row[9] || "0");
-                          const boxedQty = parseInt(row[10] || "0");
-                          return (
-                            <div key={index} className="alert alert-info mb-3">
-                              <div className="d-flex justify-content-between align-items-center mb-2">
-                                <strong>FNSKU: {matchingFnskuValue}</strong>
-                                <Badge bg="success">
-                                  Available: {availableQty}
-                                </Badge>
-                              </div>
-                              <div>
-                                <strong>Title:</strong> {row[1]}
-                              </div>
-                              <div>
-                                <strong>SKU:</strong> {row[0]}
-                              </div>
-                              <div>
-                                <strong>ASIN:</strong> {row[3]}
-                              </div>
-                              <div className="d-flex justify-content-between mt-2">
-                                <div>
-                                  <strong>Expected:</strong> {expectedQty}
-                                </div>
-                                <div>
-                                  <strong>Boxed:</strong> {boxedQty}
-                                </div>
-                              </div>
+                    {/* === MODIFIED: Enhanced matching logic === */}
+                    {(() => {
+                      const matchingProduct = findMatchingProduct(
+                        formData.fnsku
+                      );
+                      return matchingProduct ? (
+                        <div className="alert alert-info mb-3">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <strong>FNSKU: {matchingProduct.row[4]}</strong>
+                            <Badge bg="success">
+                              Available: {matchingProduct.fnsku[1]}
+                            </Badge>
+                          </div>
+                          <div>
+                            <strong>Title:</strong> {matchingProduct.row[1]}
+                          </div>
+                          <div>
+                            <strong>SKU:</strong> {matchingProduct.row[0]}
+                          </div>
+                          <div>
+                            <strong>ASIN:</strong> {matchingProduct.row[3]}
+                          </div>
+                          <div className="d-flex justify-content-between mt-2">
+                            <div>
+                              <strong>Expected:</strong>{" "}
+                              {parseInt(matchingProduct.row[9] || "0")}
                             </div>
-                          );
-                        }
-                        return null;
-                      })
-                    ) : (
-                      <div className="alert alert-warning">
-                        <InfoCircleFill className="me-2" />
-                        No matching FNSKU found. Please enter a valid FNSKU.
-                      </div>
-                    )}
+                            <div>
+                              <strong>Boxed:</strong>{" "}
+                              {parseInt(matchingProduct.row[10] || "0")}
+                            </div>
+                          </div>
+                          {/* === MODIFIED: Show which field was matched === */}
+                          <div className="mt-2">
+                            <small className="text-muted">
+                              Matched by:{" "}
+                              {matchingProduct.row[4] === formData.fnsku
+                                ? "FNSKU"
+                                : matchingProduct.row[3] === formData.fnsku
+                                ? "ASIN"
+                                : matchingProduct.row[0] === formData.fnsku
+                                ? "SKU"
+                                : "Unknown"}
+                            </small>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="alert alert-warning">
+                          <InfoCircleFill className="me-2" />
+                          No matching FNSKU, ASIN, or SKU found. Please enter a
+                          valid identifier.
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
                 <Form.Group className="mb-3">
@@ -450,12 +460,14 @@ const BoxContent0 = ({
                 {error && <div className="alert alert-danger">{error}</div>}
               </Form>
             </Tab>
-            {/* === MODIFIED/ADDED: Multi Add Tab === */}
+
+            {/* Multi Add Tab */}
             <Tab eventKey="multi" title="Multi Add">
               <Form>
                 <Row className="align-items-center mb-2">
+                  {/* === MODIFIED: Updated column header === */}
                   <Col xs={5}>
-                    <strong>FNSKU / ASIN / SKU</strong>
+                    <strong>FNSKU/ASIN/SKU</strong>
                   </Col>
                   <Col xs={3}>
                     <strong>Total</strong>
@@ -466,26 +478,25 @@ const BoxContent0 = ({
                   <Col xs={1}></Col>
                 </Row>
                 {multiRows.map((row, idx) => {
-                  // Find info for this FNSKU
-                  let fnskuInfo = null;
+                  // === MODIFIED: Enhanced info lookup for multi add ===
+                  const matchingProduct = findMatchingProduct(row.fnsku);
                   let ext = "";
                   let av = "";
-                  for (const fnsku of availablefnskus) {
-                    const fnskuRow = fnsku[0];
-                    const matchingFnskuValue = importData.mainJson[fnskuRow][4];
-                    if (matchingFnskuValue === row.fnsku) {
-                      fnskuInfo = importData.mainJson[fnskuRow];
-                      ext = fnskuInfo[9];
-                      av = fnskuInfo[9] - fnskuInfo[10];
-                    }
+
+                  if (matchingProduct) {
+                    ext = matchingProduct.row[9]; // Expected quantity
+                    av =
+                      parseInt(matchingProduct.row[9] || "0") -
+                      parseInt(matchingProduct.row[10] || "0"); // Unboxed quantity
                   }
+
                   return (
                     <Row className="align-items-center mb-2" key={idx}>
                       <Col xs={5}>
                         <InputGroup>
                           <Form.Control
                             type="text"
-                            placeholder="FNSKU"
+                            placeholder="FNSKU/ASIN/SKU"
                             value={row.fnsku}
                             onChange={(e) =>
                               handleMultiFnskuChange(idx, e.target.value)
@@ -565,7 +576,6 @@ const BoxContent0 = ({
           )}
         </Modal.Footer>
       </Modal>
-      {/* === END MODIFIED/ADDED === */}
 
       {/* Edit Quantity Modal (unchanged) */}
       <Modal show={showEditModal} onHide={handleCloseEditModal} centered>

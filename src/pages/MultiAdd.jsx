@@ -23,6 +23,7 @@ const MultiAdd = () => {
     quantity: 1,
     boxNumbers: "",
     addToMultiple: true,
+    fnsku: "", // === MODIFIED: Added fnsku field ===
   });
 
   // Validation and state
@@ -47,11 +48,9 @@ const MultiAdd = () => {
 
         setImportData(data);
         setAvailableSKUs(getAvailableSKUs(data));
-
         // Store full box details and numbers
         const boxData = getAvailableBoxes(data);
         setAvailableBoxes(boxData);
-
         setIsLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -68,11 +67,9 @@ const MultiAdd = () => {
     if (!data || !data.mainJson) return [];
 
     const skus = [];
-
     // Find FNSKU rows in the data (starting after header rows)
     for (let i = 5; i < data.mainJson.length; i++) {
       const row = data.mainJson[i];
-
       // Skip empty rows or rows without FNSKU
       if (!row || !row[4]) continue;
 
@@ -142,17 +139,25 @@ const MultiAdd = () => {
     return { boxDetails, boxNumbers };
   };
 
-  // Check for matching FNSKU when input changes
+  // === MODIFIED: Enhanced matching function to check FNSKU, ASIN, and SKU ===
+  const findMatchingProduct = (inputValue) => {
+    if (!inputValue || !availableSKUs.length) return null;
+
+    // Find matching SKU by FNSKU, ASIN, or SKU
+    const matched = availableSKUs.find(
+      (item) =>
+        item.fnsku === inputValue || // FNSKU
+        item.asin === inputValue || // ASIN
+        item.sku === inputValue // SKU
+    );
+
+    return matched || null;
+  };
+
+  // === MODIFIED: Check for matching FNSKU/ASIN/SKU when input changes ===
   useEffect(() => {
-    if (!formData.fnsku || !availableSKUs.length) {
-      setMatchedSku(null);
-      return;
-    }
-
-    // Find matching SKU by FNSKU
-    const matched = availableSKUs.find((item) => item.fnsku === formData.fnsku);
-
-    setMatchedSku(matched || null);
+    const matched = findMatchingProduct(formData.fnsku);
+    setMatchedSku(matched);
 
     // If matched, clear error
     if (matched) {
@@ -209,6 +214,7 @@ const MultiAdd = () => {
           if (isNaN(num)) {
             throw new Error("Invalid number");
           }
+
           if (!boxes.includes(num)) boxes.push(num);
         }
       });
@@ -250,7 +256,7 @@ const MultiAdd = () => {
     const newErrors = {};
 
     if (!matchedSku) {
-      newErrors.fnsku = "Please enter a valid FNSKU";
+      newErrors.fnsku = "Please enter a valid FNSKU, ASIN, or SKU"; // === MODIFIED: Updated error message ===
     }
 
     if (!formData.quantity || formData.quantity < 1) {
@@ -329,6 +335,7 @@ const MultiAdd = () => {
             currentQty + quantity
           ).toString();
         }
+
         boxesUpdated++;
       }
 
@@ -360,59 +367,64 @@ const MultiAdd = () => {
   // UI rendering
   return (
     <Container className="py-4">
-      {/* Buttons */}
-      <div className="d-flex justify-content-between mb-4">
-        {/* Left-aligned Previous button */}
-        <div>
-          <Button
-            variant="outline-dark"
-            onClick={() => navigate(-1)}
-            disabled={isLoading}
-            className="d-flex align-items-center"
-          >
-            <i className="bi bi-arrow-left me-2"></i> Previous
-          </Button>
-        </div>
-
-        {/* Right-aligned action buttons */}
-        <div>
-          <Button
-            variant="outline-primary"
-            className="me-2"
-            onClick={() => navigate("/boxsummary0", { state: { shipmentID } })}
-            disabled={isLoading}
-          >
-            <BoxSeamFill className="me-2" /> BoxSummary
-          </Button>
-        </div>
-      </div>
-
       <Card className="shadow-sm">
-        <Card.Header className="bg-dark text-white">
-          <h4 className="mb-0 d-flex align-items-center">
-            <BoxSeamFill className="me-2" />
-            Add to Multiple Boxes
-          </h4>
+        <Card.Header className="bg-primary text-white">
+          <div className="d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">
+              <BoxSeamFill className="me-2" />
+              Add to Multiple Boxes
+            </h5>
+            {shipmentID && (
+              <small className="opacity-75">Shipment: {shipmentID}</small>
+            )}
+          </div>
         </Card.Header>
+
         <Card.Body>
+          {/* Buttons */}
+          <div className="d-flex justify-content-between mb-4">
+            {/* Left-aligned Previous button */}
+            <Button
+              variant="outline-secondary"
+              onClick={() => navigate(-1)}
+              disabled={isLoading}
+              className="d-flex align-items-center"
+            >
+              Previous
+            </Button>
+
+            {/* Right-aligned action buttons */}
+            <div className="d-flex gap-2">
+              <Button
+                variant="outline-primary"
+                onClick={() =>
+                  navigate("/boxsummary0", { state: { shipmentID } })
+                }
+                disabled={isLoading}
+              >
+                BoxSummary
+              </Button>
+            </div>
+          </div>
+
           {isLoading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary mb-3" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="mt-3">Loading data...</p>
+              <div>Loading data...</div>
             </div>
           ) : (
             <Form onSubmit={handleSubmit}>
-              {/* FNSKU Input Field - REPLACED DROPDOWN */}
+              {/* === MODIFIED: FNSKU/ASIN/SKU Input Field === */}
               <Form.Group className="mb-3">
                 <Form.Label>
-                  <Upc className="me-2" /> Enter FNSKU
+                  <Upc className="me-2" /> Enter FNSKU/ASIN/Merchant SKU
                 </Form.Label>
                 <Form.Control
                   type="text"
                   name="fnsku"
-                  placeholder="Enter FNSKU (e.g., X004B0UKXN)"
+                  placeholder="Enter FNSKU (e.g., X004B0UKXN), ASIN, or Merchant SKU"
                   value={formData.fnsku}
                   onChange={handleInputChange}
                   isInvalid={!!errors.fnsku}
@@ -422,11 +434,11 @@ const MultiAdd = () => {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              {/* Display matched SKU info - NEW SECTION */}
+              {/* === MODIFIED: Display matched SKU info === */}
               {formData.fnsku && (
                 <>
                   {matchedSku ? (
-                    <div className="alert alert-info mb-3">
+                    <Alert variant="info" className="mb-3">
                       <div className="d-flex justify-content-between align-items-center mb-2">
                         <strong>FNSKU: {matchedSku.fnsku}</strong>
                         <Badge bg="success">
@@ -450,12 +462,26 @@ const MultiAdd = () => {
                           <strong>Boxed:</strong> {matchedSku.boxedQty}
                         </div>
                       </div>
-                    </div>
+                      {/* === MODIFIED: Show which field was matched === */}
+                      <div className="mt-2">
+                        <small className="text-muted">
+                          Matched by:{" "}
+                          {matchedSku.fnsku === formData.fnsku
+                            ? "FNSKU"
+                            : matchedSku.asin === formData.fnsku
+                            ? "ASIN"
+                            : matchedSku.sku === formData.fnsku
+                            ? "SKU"
+                            : "Unknown"}
+                        </small>
+                      </div>
+                    </Alert>
                   ) : (
-                    <div className="alert alert-warning">
+                    <Alert variant="warning" className="mb-3">
                       <InfoCircleFill className="me-2" />
-                      No matching FNSKU found. Please enter a valid FNSKU.
-                    </div>
+                      No matching FNSKU, ASIN, or SKU found. Please enter a
+                      valid identifier.
+                    </Alert>
                   )}
                 </>
               )}
@@ -482,7 +508,6 @@ const MultiAdd = () => {
               <Form.Group className="mb-3">
                 <Form.Check
                   type="checkbox"
-                  id="add-to-multiple"
                   name="addToMultiple"
                   label="Add to Multiple Boxes"
                   checked={formData.addToMultiple}
@@ -497,9 +522,9 @@ const MultiAdd = () => {
                   <Form.Control
                     type="text"
                     name="boxNumbers"
+                    placeholder="e.g., 1-5, 8, 10-12"
                     value={formData.boxNumbers}
                     onChange={handleInputChange}
-                    placeholder="Enter box numbers (e.g., 10-14, 4, 6, 7, 9)"
                     isInvalid={!!errors.boxNumbers}
                   />
                   <Form.Text className="text-muted">
@@ -514,22 +539,15 @@ const MultiAdd = () => {
 
               {/* Preview of parsed boxes */}
               {parsedBoxes.length > 0 && (
-                <Alert variant="info" className="mt-3">
-                  <div className="d-flex align-items-center mb-2">
-                    <Check2Circle className="me-2" />
-                    <strong>Will add to {parsedBoxes.length} boxes:</strong>
-                  </div>
-                  <div className="parsed-boxes-preview">
+                <Alert variant="info" className="mb-3">
+                  <strong>Will add to {parsedBoxes.length} boxes:</strong>
+                  <div className="mt-2">
                     {parsedBoxes.map((boxNum) => {
                       const boxDetail = availableBoxes.boxDetails?.find(
                         (detail) => detail.boxNumber === boxNum
                       );
                       return (
-                        <Badge
-                          bg="secondary"
-                          key={boxNum}
-                          className="me-1 mb-1"
-                        >
+                        <Badge key={boxNum} bg="secondary" className="me-1">
                           {boxDetail?.name || `Box ${boxNum}`}
                         </Badge>
                       );
@@ -539,10 +557,9 @@ const MultiAdd = () => {
               )}
 
               {/* Buttons */}
-              <div className="d-flex justify-content-end mt-4">
+              <div className="d-flex justify-content-end gap-2">
                 <Button
                   variant="outline-secondary"
-                  className="me-2"
                   onClick={() =>
                     navigate("/boxsummary", { state: { shipmentID } })
                   }
@@ -551,14 +568,13 @@ const MultiAdd = () => {
                   Cancel
                 </Button>
                 <Button
-                  variant="primary"
                   type="submit"
+                  variant="primary"
                   disabled={
-                    isLoading ||
-                    !matchedSku ||
-                    Object.keys(errors).some((key) => errors[key])
+                    isLoading || Object.values(errors).some((error) => error)
                   }
                 >
+                  <Plus className="me-2" />
                   {isLoading ? "Processing..." : "Add Item"}
                 </Button>
               </div>
