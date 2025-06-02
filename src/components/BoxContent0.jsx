@@ -1,5 +1,17 @@
 import React, { useState } from "react";
-import { Card, Button, Modal, Form, Badge, ButtonGroup } from "react-bootstrap";
+import {
+  Card,
+  Button,
+  Modal,
+  Form,
+  Badge,
+  ButtonGroup,
+  Tabs,
+  Tab,
+  Row,
+  Col,
+  InputGroup,
+} from "react-bootstrap";
 import {
   BoxSeam,
   PlusLg,
@@ -29,11 +41,18 @@ const BoxContent0 = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Form data
+  // === MODIFIED/ADDED: Add mode state for tabs ===
+  const [addMode, setAddMode] = useState("single"); // "single" or "multi"
+
+  // Form data for single add
   const [formData, setFormData] = useState({
     fnsku: "",
     quantity: 1,
   });
+
+  // === MODIFIED/ADDED: Multi add state ===
+  const [multiRows, setMultiRows] = useState([{ fnsku: "" }]);
+  const [multiQty, setMultiQty] = useState(1);
 
   // Edit state
   const [editingItem, setEditingItem] = useState(null);
@@ -45,18 +64,17 @@ const BoxContent0 = ({
     setShowAddModal(true);
   };
 
-  // Handle closing the add modal
+  // === MODIFIED/ADDED: Reset all add forms on close ===
   const handleCloseAddModal = () => {
     setShowAddModal(false);
-    setFormData({
-      fnsku: "",
-      quantity: 1,
-    });
+    setFormData({ fnsku: "", quantity: 1 });
+    setMultiRows([{ fnsku: "" }]);
+    setMultiQty(1);
+    setAddMode("single");
   };
 
   // Open the edit modal for a specific item
   const handleShowEditModal = (item) => {
-    // Find availability information
     const fnskuInfo = availablefnskus.find((fnsku) => {
       const fnskuRow = fnsku[0];
       return importData.mainJson[fnskuRow][4] === item.fnsku;
@@ -69,20 +87,11 @@ const BoxContent0 = ({
       const boxedQty = parseInt(row[10] || "0");
       const currentQty = parseInt(item.quantity || "0");
 
-      // Set the item with additional availability info
-      // setEditingItem({
-      //   ...item,
-      //   expectedQty,
-      //   boxedQty,
-      //   availableQty: fnskuInfo[1] + currentQty, // Available + current (which will be freed up)
-      //   fnskuRow,
-      // });
-
       setEditingItem({
         ...item,
         expectedQty,
         boxedQty,
-        availableQty: fnskuInfo[1], // Available + current (which will be freed up)
+        availableQty: fnskuInfo[1],
         fnskuRow,
       });
 
@@ -91,7 +100,6 @@ const BoxContent0 = ({
     }
   };
 
-  // Handle closing the edit modal
   const handleCloseEditModal = () => {
     setShowEditModal(false);
     setEditingItem(null);
@@ -108,103 +116,99 @@ const BoxContent0 = ({
     });
   };
 
+  // === MODIFIED/ADDED: Multi add handlers ===
+  const handleMultiFnskuChange = (idx, value) => {
+    setMultiRows(
+      multiRows.map((row, i) => (i === idx ? { ...row, fnsku: value } : row))
+    );
+  };
+  const handleAddMultiRow = () => setMultiRows([...multiRows, { fnsku: "" }]);
+  const handleRemoveMultiRow = (idx) =>
+    setMultiRows(multiRows.filter((_, i) => i !== idx));
+
   // Handle quantity change in edit modal
   const handleQuantityChange = (e) => {
     setNewQuantity(e.target.value);
-    setEditError(""); // Clear error on input change
+    setEditError("");
   };
 
-  // Handle save for edit modal
   const handleSaveEdit = () => {
     if (!editingItem) return;
-
     const newQty = parseInt(newQuantity);
     const currentQty = parseInt(editingItem.quantity);
-
-    // Validation
     if (isNaN(newQty) || newQty < 0) {
       setEditError("Please enter a valid quantity");
       return;
     }
-
-    // Calculate available unboxed quantity
     const unboxedQty = editingItem.expectedQty - editingItem.boxedQty;
-
-    // Calculate max allowed quantity (current in this box + available unboxed)
     const maxAllowed = currentQty + unboxedQty;
-
-    // Check if quantity is within available limits
     if (newQty > maxAllowed) {
       setEditError(
         `Maximum allowed quantity is ${maxAllowed} (${currentQty} current + ${unboxedQty} available)`
       );
       return;
     }
-
-    // If quantity is 0, just remove the item
     if (newQty === 0) {
       removeFNSKU(editingItem.fnsku, editingItem.quantity);
       handleCloseEditModal();
       return;
     }
-
-    // If no change, just close
     if (newQty === currentQty) {
       handleCloseEditModal();
       return;
     }
-
-    // Handle quantity changes
     if (newQty < currentQty) {
-      // Reducing quantity: remove all, then add the new amount
       if (newQty > 0) {
         const difference = currentQty - newQty;
         const success = reduceItem(editingItem.fnskuRow, difference);
-        if (success) {
-          handleCloseEditModal();
-        }
+        if (success) handleCloseEditModal();
       } else {
         handleCloseEditModal();
       }
     } else if (newQty > currentQty) {
-      // Increasing quantity: just add the difference
       const difference = newQty - currentQty;
       const success = addItem(editingItem.fnskuRow, difference);
-      if (success) {
-        handleCloseEditModal();
-      }
+      if (success) handleCloseEditModal();
     }
   };
 
-  // Handle form submission for add modal
+  // Handle form submission for single add
   const handleSubmit = () => {
-    // Find the correct index for the entered FNSKU
     let fnskuIndex = null;
-
-    // Search through availablefnskus to find the matching row index
     for (const fnsku of availablefnskus) {
       const fnskuRow = fnsku[0];
       const matchingFnskuValue = importData.mainJson[fnskuRow][4];
-
-      // If we find a match, use that row's index
       if (matchingFnskuValue === formData.fnsku) {
         fnskuIndex = fnskuRow;
         break;
       }
     }
-
-    // Only proceed if we found a valid index
     if (fnskuIndex !== null) {
-      // Call the parent component's add item function with the correct index
       let status = addItem(fnskuIndex, parseInt(formData.quantity));
-      if (status) {
-        handleCloseAddModal();
-      }
+      if (status) handleCloseAddModal();
     } else {
-      // Handle the case where no matching FNSKU was found
+      // Optionally set error state here
       console.error("No matching FNSKU found");
-      // You could also set an error state here
     }
+  };
+
+  // === MODIFIED/ADDED: Handle submit for multi add ===
+  const handleMultiSubmit = () => {
+    multiRows.forEach((row) => {
+      let fnskuIndex = null;
+      for (const fnsku of availablefnskus) {
+        const fnskuRow = fnsku[0];
+        const matchingFnskuValue = importData.mainJson[fnskuRow][4];
+        if (matchingFnskuValue === row.fnsku) {
+          fnskuIndex = fnskuRow;
+          break;
+        }
+      }
+      if (fnskuIndex !== null && row.fnsku) {
+        addItem(fnskuIndex, parseInt(multiQty));
+      }
+    });
+    handleCloseAddModal();
   };
 
   return (
@@ -337,7 +341,7 @@ const BoxContent0 = ({
         )}
       </Card.Body>
 
-      {/* Add Item Modal */}
+      {/* === MODIFIED/ADDED: Add Item Modal with Tabs === */}
       <Modal
         show={showAddModal}
         onHide={handleCloseAddModal}
@@ -350,124 +354,220 @@ const BoxContent0 = ({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>
-                <Upc className="me-2" /> Enter FNSKU
-              </Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Enter FNSKU (e.g., X004B0UKXN)"
-                value={formData.fnsku}
-                onChange={(e) => {
-                  const enteredFnsku = e.target.value;
-                  setFormData({
-                    ...formData,
-                    fnsku: enteredFnsku,
-                  });
-                }}
-              />
-            </Form.Group>
-
-            {formData.fnsku && (
-              <>
-                {availablefnskus.some((fnsku) => {
-                  const fnskuRow = fnsku[0];
-                  const availableQty = fnsku[1];
-                  const matchingFnskuValue = importData.mainJson[fnskuRow][4];
-
-                  if (matchingFnskuValue === formData.fnsku) {
-                    return true;
-                  }
-                  return false;
-                }) ? (
-                  availablefnskus.map((fnsku, index) => {
-                    const fnskuRow = fnsku[0];
-                    const availableQty = fnsku[1];
-                    const matchingFnskuValue = importData.mainJson[fnskuRow][4];
-
-                    if (matchingFnskuValue === formData.fnsku) {
-                      const row = importData.mainJson[fnskuRow];
-                      const expectedQty = parseInt(row[9] || "0");
-                      const boxedQty = parseInt(row[10] || "0");
-
-                      return (
-                        <div key={index} className="alert alert-info mb-3">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <strong>FNSKU: {matchingFnskuValue}</strong>
-                            <Badge bg="success">
-                              Available: {availableQty}
-                            </Badge>
-                          </div>
-                          <div>
-                            <strong>Title:</strong> {row[1]}
-                          </div>
-                          <div>
-                            <strong>SKU:</strong> {row[0]}
-                          </div>
-                          <div>
-                            <strong>ASIN:</strong> {row[3]}
-                          </div>
-                          <div className="d-flex justify-content-between mt-2">
-                            <div>
-                              <strong>Expected:</strong> {expectedQty}
+          <Tabs
+            id="add-item-tabs"
+            activeKey={addMode}
+            onSelect={(k) => setAddMode(k)}
+            className="mb-3"
+          >
+            {/* Single Add Tab */}
+            <Tab eventKey="single" title="Single Add">
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    <Upc className="me-2" /> Enter FNSKU
+                  </Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Enter FNSKU (e.g., X004B0UKXN)"
+                    value={formData.fnsku}
+                    onChange={(e) => {
+                      const enteredFnsku = e.target.value;
+                      setFormData({
+                        ...formData,
+                        fnsku: enteredFnsku,
+                      });
+                    }}
+                  />
+                </Form.Group>
+                {formData.fnsku && (
+                  <>
+                    {availablefnskus.some((fnsku) => {
+                      const fnskuRow = fnsku[0];
+                      const matchingFnskuValue =
+                        importData.mainJson[fnskuRow][4];
+                      return matchingFnskuValue === formData.fnsku;
+                    }) ? (
+                      availablefnskus.map((fnsku, index) => {
+                        const fnskuRow = fnsku[0];
+                        const availableQty = fnsku[1];
+                        const matchingFnskuValue =
+                          importData.mainJson[fnskuRow][4];
+                        if (matchingFnskuValue === formData.fnsku) {
+                          const row = importData.mainJson[fnskuRow];
+                          const expectedQty = parseInt(row[9] || "0");
+                          const boxedQty = parseInt(row[10] || "0");
+                          return (
+                            <div key={index} className="alert alert-info mb-3">
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <strong>FNSKU: {matchingFnskuValue}</strong>
+                                <Badge bg="success">
+                                  Available: {availableQty}
+                                </Badge>
+                              </div>
+                              <div>
+                                <strong>Title:</strong> {row[1]}
+                              </div>
+                              <div>
+                                <strong>SKU:</strong> {row[0]}
+                              </div>
+                              <div>
+                                <strong>ASIN:</strong> {row[3]}
+                              </div>
+                              <div className="d-flex justify-content-between mt-2">
+                                <div>
+                                  <strong>Expected:</strong> {expectedQty}
+                                </div>
+                                <div>
+                                  <strong>Boxed:</strong> {boxedQty}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <strong>Boxed:</strong> {boxedQty}
-                            </div>
-                          </div>
-                          <input
-                            type="hidden"
-                            name="fnsku"
-                            value={fnskuRow}
-                            onChange={handleInputChange}
-                          />
-                        </div>
-                      );
-                    }
-                    return null;
-                  })
-                ) : (
-                  <div className="alert alert-warning">
-                    <InfoCircleFill className="me-2" />
-                    No matching FNSKU found. Please enter a valid FNSKU.
-                  </div>
+                          );
+                        }
+                        return null;
+                      })
+                    ) : (
+                      <div className="alert alert-warning">
+                        <InfoCircleFill className="me-2" />
+                        No matching FNSKU found. Please enter a valid FNSKU.
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-
-            <Form.Group className="mb-3">
-              <Form.Label>
-                <Calculator className="me-2" /> Quantity
-              </Form.Label>
-              <Form.Control
-                type="number"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleInputChange}
-                min="1"
-              />
-            </Form.Group>
-
-            {error && <div className="alert alert-danger">{error}</div>}
-          </Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>
+                    <Calculator className="me-2" /> Quantity
+                  </Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    min="1"
+                  />
+                </Form.Group>
+                {error && <div className="alert alert-danger">{error}</div>}
+              </Form>
+            </Tab>
+            {/* === MODIFIED/ADDED: Multi Add Tab === */}
+            <Tab eventKey="multi" title="Multi Add">
+              <Form>
+                <Row className="align-items-center mb-2">
+                  <Col xs={5}>
+                    <strong>FNSKU / ASIN / SKU</strong>
+                  </Col>
+                  <Col xs={3}>
+                    <strong>Total</strong>
+                  </Col>
+                  <Col xs={3}>
+                    <strong>Unboxed</strong>
+                  </Col>
+                  <Col xs={1}></Col>
+                </Row>
+                {multiRows.map((row, idx) => {
+                  // Find info for this FNSKU
+                  let fnskuInfo = null;
+                  let ext = "";
+                  let av = "";
+                  for (const fnsku of availablefnskus) {
+                    const fnskuRow = fnsku[0];
+                    const matchingFnskuValue = importData.mainJson[fnskuRow][4];
+                    if (matchingFnskuValue === row.fnsku) {
+                      fnskuInfo = importData.mainJson[fnskuRow];
+                      ext = fnskuInfo[9];
+                      av = fnskuInfo[9] - fnskuInfo[10];
+                    }
+                  }
+                  return (
+                    <Row className="align-items-center mb-2" key={idx}>
+                      <Col xs={5}>
+                        <InputGroup>
+                          <Form.Control
+                            type="text"
+                            placeholder="FNSKU"
+                            value={row.fnsku}
+                            onChange={(e) =>
+                              handleMultiFnskuChange(idx, e.target.value)
+                            }
+                          />
+                          {multiRows.length > 1 && (
+                            <Button
+                              variant="outline-danger"
+                              onClick={() => handleRemoveMultiRow(idx)}
+                              size="sm"
+                              tabIndex={-1}
+                            >
+                              <TrashFill />
+                            </Button>
+                          )}
+                        </InputGroup>
+                      </Col>
+                      <Col xs={3}>{ext}</Col>
+                      <Col xs={3}>{av}</Col>
+                      <Col xs={1}>
+                        {idx === multiRows.length - 1 && (
+                          <Button
+                            variant="outline-primary"
+                            onClick={handleAddMultiRow}
+                            size="sm"
+                            tabIndex={-1}
+                          >
+                            <PlusLg />
+                          </Button>
+                        )}
+                      </Col>
+                    </Row>
+                  );
+                })}
+                <Form.Group className="mb-3 mt-3">
+                  <Form.Label>
+                    <Calculator className="me-2" /> Quantity for All
+                  </Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    value={multiQty}
+                    onChange={(e) => setMultiQty(e.target.value)}
+                  />
+                </Form.Group>
+                {error && <div className="alert alert-danger">{error}</div>}
+              </Form>
+            </Tab>
+          </Tabs>
         </Modal.Body>
         <Modal.Footer className="border-0">
           <Button variant="outline-secondary" onClick={handleCloseAddModal}>
             Cancel
           </Button>
-          <Button
-            variant="success"
-            className="d-flex align-items-center"
-            onClick={handleSubmit}
-            disabled={!formData.fnsku || formData.quantity < 1}
-          >
-            <Check2 className="me-2" /> Add Item
-          </Button>
+          {addMode === "single" ? (
+            <Button
+              variant="success"
+              className="d-flex align-items-center"
+              onClick={handleSubmit}
+              disabled={!formData.fnsku || formData.quantity < 1}
+            >
+              <Check2 className="me-2" /> Add Item
+            </Button>
+          ) : (
+            <Button
+              variant="success"
+              className="d-flex align-items-center"
+              onClick={handleMultiSubmit}
+              disabled={
+                multiRows.length === 0 ||
+                multiRows.some((row) => !row.fnsku) ||
+                multiQty < 1
+              }
+            >
+              <Check2 className="me-2" /> Add All Items
+            </Button>
+          )}
         </Modal.Footer>
       </Modal>
+      {/* === END MODIFIED/ADDED === */}
 
-      {/* Edit Quantity Modal */}
+      {/* Edit Quantity Modal (unchanged) */}
       <Modal show={showEditModal} onHide={handleCloseEditModal} centered>
         <Modal.Header closeButton>
           <Modal.Title>
@@ -512,7 +612,6 @@ const BoxContent0 = ({
                   value={newQuantity}
                   onChange={handleQuantityChange}
                   min="0"
-                  // max={editingItem.availableQty}
                   isInvalid={!!editError}
                 />
                 <Form.Text muted>
