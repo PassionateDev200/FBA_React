@@ -105,7 +105,7 @@ const BoxContent = ({
       const matchingFnskuValue = importData.mainJson[fnskuRow][4];
       if (matchingFnskuValue === fnskuValue) {
         const row = importData.mainJson[fnskuRow];
-        return { ext: row[9], av: row[1] };
+        return { ext: row[9], av: row[9] - row[10] };
       }
     }
     return { ext: "", av: "" };
@@ -231,10 +231,10 @@ const BoxContent = ({
                     <strong>FNSKU / ASIN / SKU</strong>
                   </Col>
                   <Col xs={3}>
-                    <strong>Ext</strong>
+                    <strong>Total</strong>
                   </Col>
                   <Col xs={3}>
-                    <strong>Av</strong>
+                    <strong>Unboxed </strong>
                   </Col>
                   <Col xs={1}></Col>
                 </Row>

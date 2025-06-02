@@ -12,6 +12,8 @@ import {
   Spinner,
   InputGroup,
   FloatingLabel,
+  Tooltip,
+  OverlayTrigger,
 } from "react-bootstrap"; // Added more Bootstrap components
 import {
   PencilFill,
@@ -92,6 +94,71 @@ function ProductDetail() {
     labels_units: "",
     expected_quantity: "0",
   });
+
+  const getBoxDistribution = (productIndex) => {
+    if (!importData || !importData.mainJson) return [];
+
+    let boxNameIndex = -1;
+    // Find the "Name of box" row
+    for (let i = 0; i < importData.mainJson.length; i++) {
+      if (importData.mainJson[i][0] === "Name of box") {
+        boxNameIndex = i;
+        break;
+      }
+    }
+
+    if (boxNameIndex === -1) return [];
+
+    const boxNames = importData.mainJson[boxNameIndex];
+    const productRow = importData.mainJson[productIndex];
+    const distribution = [];
+
+    // Start from column 12 (box columns typically start after the main product data)
+    for (let i = 12; i < boxNames.length; i++) {
+      if (boxNames[i] && boxNames[i] !== "") {
+        const quantity = productRow[i] || "0";
+        if (quantity !== "" && quantity !== "0") {
+          distribution.push({
+            boxName: boxNames[i],
+            quantity: quantity,
+          });
+        }
+      }
+    }
+
+    return distribution;
+  };
+
+  // Create tooltip content for box distribution
+  const renderBoxDistributionTooltip = (productIndex) => (props) => {
+    const distribution = getBoxDistribution(productIndex);
+
+    if (distribution.length === 0) {
+      return (
+        <Tooltip id={`tooltip-${productIndex}`} {...props}>
+          <div style={{ textAlign: "left" }}>
+            <strong>Box Distribution:</strong>
+            <br />
+            No items in boxes yet
+          </div>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <Tooltip id={`tooltip-${productIndex}`} {...props}>
+        <div style={{ textAlign: "left" }}>
+          <strong>Box Distribution:</strong>
+          <br />
+          {distribution.map((item, index) => (
+            <div key={index}>
+              {item.boxName}: {item.quantity}
+            </div>
+          ))}
+        </div>
+      </Tooltip>
+    );
+  };
 
   // Calculate total expected quantity and boxed quantity
   const totals = useMemo(() => {
@@ -446,19 +513,25 @@ function ProductDetail() {
                         <td className="align-middle">{sku[9]}</td>
                         <td className="align-middle">
                           {/* Added color-coded badges */}
-                          <Badge
-                            bg={
-                              parseInt(sku[10] || 0) === parseInt(sku[9] || 0)
-                                ? "success"
-                                : parseInt(sku[10] || 0) === 0
-                                ? "danger"
-                                : "warning"
-                            }
+                          <OverlayTrigger
+                            placement="top"
+                            delay={{ show: 250, hide: 400 }}
+                            overlay={renderBoxDistributionTooltip(index)}
                           >
-                            {index === 4
-                              ? sku[10]
-                              : importData.mainJson[index][10] || "0"}
-                          </Badge>
+                            <Badge
+                              bg={
+                                parseInt(sku[10] || 0) === parseInt(sku[9] || 0)
+                                  ? "success"
+                                  : parseInt(sku[10] || 0) === 0
+                                  ? "danger"
+                                  : "warning"
+                              }
+                            >
+                              {index === 4
+                                ? sku[10]
+                                : importData.mainJson[index][10] || "0"}
+                            </Badge>
+                          </OverlayTrigger>
                         </td>
                         <td className="align-middle">
                           {index === 4 ? (
