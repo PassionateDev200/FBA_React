@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react"; // === MODIFIED/NEW ===
 import {
   Card,
   Button,
@@ -58,6 +58,9 @@ const BoxContent0 = ({
   const [editingItem, setEditingItem] = useState(null);
   const [newQuantity, setNewQuantity] = useState("");
   const [editError, setEditError] = useState("");
+
+  // === NEW: Ref for quantity input ===
+  const qtyInputRef = useRef(null);
 
   // Handle opening the add modal
   const handleShowAddModal = () => {
@@ -177,8 +180,6 @@ const BoxContent0 = ({
     for (const fnsku of availablefnskus) {
       const fnskuRow = fnsku[0];
       const row = importData.mainJson[fnskuRow];
-
-      // Check FNSKU (column 4), ASIN (column 3), and SKU (column 0)
       if (
         row[4] === inputValue || // FNSKU
         row[3] === inputValue || // ASIN
@@ -190,10 +191,20 @@ const BoxContent0 = ({
     return null;
   };
 
-  // === MODIFIED: Handle form submission for single add ===
+  // === NEW: Effect to auto-focus quantity when a valid match is found ===
+  useEffect(() => {
+    if (!showAddModal) return;
+    const matchingProduct = findMatchingProduct(formData.fnsku);
+    if (matchingProduct && qtyInputRef.current) {
+      qtyInputRef.current.focus();
+    }
+    // Only run when fnsku changes or modal opens
+    // eslint-disable-next-line
+  }, [formData.fnsku, showAddModal]); // === MODIFIED/NEW ===
+
+  // Handle form submission for single add
   const handleSubmit = () => {
     const matchingProduct = findMatchingProduct(formData.fnsku);
-
     if (matchingProduct) {
       let status = addItem(
         matchingProduct.fnskuRow,
@@ -205,11 +216,10 @@ const BoxContent0 = ({
     }
   };
 
-  // === MODIFIED: Handle submit for multi add ===
+  // Handle submit for multi add
   const handleMultiSubmit = () => {
     multiRows.forEach((row) => {
       const matchingProduct = findMatchingProduct(row.fnsku);
-
       if (matchingProduct && row.fnsku) {
         addItem(matchingProduct.fnskuRow, parseInt(multiQty));
       }
@@ -370,7 +380,6 @@ const BoxContent0 = ({
             <Tab eventKey="single" title="Single Add">
               <Form>
                 <Form.Group className="mb-3">
-                  {/* === MODIFIED: Updated label text === */}
                   <Form.Label>
                     <Upc className="me-2" /> Enter FNSKU/ASIN/Merchant SKU
                   </Form.Label>
@@ -389,7 +398,6 @@ const BoxContent0 = ({
                 </Form.Group>
                 {formData.fnsku && (
                   <>
-                    {/* === MODIFIED: Enhanced matching logic === */}
                     {(() => {
                       const matchingProduct = findMatchingProduct(
                         formData.fnsku
@@ -421,7 +429,6 @@ const BoxContent0 = ({
                               {parseInt(matchingProduct.row[10] || "0")}
                             </div>
                           </div>
-                          {/* === MODIFIED: Show which field was matched === */}
                           <div className="mt-2">
                             <small className="text-muted">
                               Matched by:{" "}
@@ -455,6 +462,7 @@ const BoxContent0 = ({
                     value={formData.quantity}
                     onChange={handleInputChange}
                     min="1"
+                    ref={qtyInputRef} // === MODIFIED/NEW: Attach ref ===
                   />
                 </Form.Group>
                 {error && <div className="alert alert-danger">{error}</div>}
